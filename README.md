@@ -12,7 +12,7 @@ vote-app/
 ├── .gitignore          # Cấu hình bảo mật, bỏ qua file CSDL và venv
 ├── README.md           # Hướng dẫn chi tiết
 ├── requirements.txt    # Thư viện phụ thuộc (streamlit>=1.30.0)
-├── students.json       # Danh sách 46 học sinh lớp 10A5
+├── students.json       # Danh sách 46 học sinh lớp 10B5
 ├── votes.db            # Cơ sở dữ liệu SQLite tự khởi tạo & an toàn
 ├── app.py              # Web app tích hợp 2 cổng: Học sinh + Giáo viên
 └── admin.py            # CLI quản trị nâng cao trên Terminal
@@ -36,18 +36,18 @@ git commit -m "Initial commit for vote-app"
 git branch -M main
 
 # Tạo repo mới trên GitHub (ví dụ: vote-10a5) rồi liên kết và đẩy lên:
-git remote add origin https://github.com/tranlequyengdtx-cmd/vote-10a5.git
+git remote add origin https://github.com/tranlequyengdtx-cmd/vote-10b5.git
 git push -u origin main
 ```
 
 ### Bước 2: Kích hoạt trên Streamlit Cloud
 1. Truy cập [share.streamlit.io](https://share.streamlit.io) và đăng nhập bằng tài khoản GitHub `tranlequyengdtx-cmd`.
 2. Bấm nút **"Create app"** / **"New app"**.
-3. Chọn Repository: `tranlequyengdtx-cmd/vote-10a5`, nhánh `main`, file chính `app.py`.
+3. Chọn Repository: `tranlequyengdtx-cmd/vote-10b5`, nhánh `main`, file chính `app.py`.
 4. Bấm **"Deploy"**.
 
 Hệ thống sẽ cấp ngay cho Thầy một đường link:
-👉 **`https://vote-10a5.streamlit.app`** (Thầy có thể tùy chỉnh tên miền con theo ý muốn trong phần Settings của app).
+👉 **`https://vote-10b5.streamlit.app`** (Thầy có thể tùy chỉnh tên miền con theo ý muốn trong phần Settings của app).
 
 ---
 

@@ -27,7 +27,7 @@ DEFAULT_ADMIN_PIN = "123456"
 
 # Cấu hình giao diện Streamlit
 st.set_page_config(
-    page_title="Bình chọn Lớp học 10A5",
+    page_title="Bình chọn Lớp học 10B5",
     page_icon="🗳️",
     layout="centered",
     initial_sidebar_state="expanded"
@@ -435,7 +435,7 @@ def show_admin_portal():
 # GIAO DIỆN HỌC SINH (BÌNH CHỌN & GÓP Ý)
 # ==============================================================================
 def show_student_login():
-    st.title("🗳️ BÌNH CHỌN LỚP HỌC 10A5")
+    st.title("🗳️ BÌNH CHỌN LỚP HỌC 10B5")
     st.caption("Cổng bình chọn & đóng góp ý kiến bí mật dành cho học sinh")
 
     if not student_names:
