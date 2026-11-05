@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bình Chọn & Đóng Góp Ý Kiến - Lớp 10B5</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div id="app" class="glass-container">
+        <!-- Theme Toggle -->
+        <button id="theme-toggle" class="theme-toggle" title="Đổi chế độ Sáng / Tối">
+            <i data-lucide="sun" id="theme-icon"></i>
+        </button>
+
+        <!-- SCREEN 1: ĐĂNG NHẬP NHANH (CHỌN TÊN) -->
+        <div id="screen-login" class="screen active">
+            <header class="app-header">
+                <div class="logo-badge">
+                    <i data-lucide="award"></i>
+                    <span>LỚP 10B5</span>
+                </div>
+                <h1>Cổng Bình Chọn & Góp Ý</h1>
+                <p class="subtitle">Không cần mật khẩu • Thao tác nhanh trong 30 giây</p>
+            </header>
+
+            <main class="login-main">
+                <div class="input-card">
+                    <label for="student-input">
+                        <i data-lucide="user-check"></i>
+                        <span>Chọn hoặc nhập tên của bạn:</span>
+                    </label>
+                    <div class="search-input-wrapper">
+                        <input 
+                            type="text" 
+                            id="student-input" 
+                            placeholder="Gõ vài chữ cái (VD: Nam, Duy, Bảo...)" 
+                            autocomplete="off"
+                        >
+                        <button type="button" id="clear-input-btn" class="icon-btn hidden" title="Xóa">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+
+                    <!-- Autocomplete Suggestions List -->
+                    <div id="suggestions-box" class="suggestions-box hidden"></div>
+
+                    <div class="divider-text"><span>hoặc</span></div>
+
+                    <button type="button" id="open-modal-btn" class="secondary-btn btn-block">
+                        <i data-lucide="list"></i>
+                        <span>Xem danh sách 46 bạn trong lớp</span>
+                    </button>
+                </div>
+
+                <div class="action-footer">
+                    <button id="login-submit-btn" class="primary-btn btn-block" disabled>
+                        <span>Vào bình chọn</span>
+                        <i data-lucide="arrow-right"></i>
+                    </button>
+                </div>
+            </main>
+        </div>
+
+        <!-- SCREEN 2: BÌNH CHỌN & GỬI GÓP Ý -->
+        <div id="screen-vote" class="screen">
+            <header class="quiz-header">
+                <div class="user-info-bar">
+                    <div class="user-badge">
+                        <i data-lucide="user"></i>
+                        <span id="current-user-display">Học sinh</span>
+                    </div>
+                    <button id="logout-btn" class="text-btn" title="Đổi tên / Thoát">
+                        <i data-lucide="log-out"></i>
+                        <span>Đổi tên</span>
+                    </button>
+                </div>
+                <h2>Bình Chọn Học Sinh Tiêu Biểu</h2>
+                <p class="section-desc">Tích chọn các bạn xứng đáng (có thể chọn nhiều bạn). Bạn không thể tự bình chọn cho chính mình.</p>
+            </header>
+
+            <main class="vote-main">
+                <!-- Section 1: Voting -->
+                <div class="vote-section">
+                    <div class="section-header">
+                        <div class="search-filter-wrapper">
+                            <i data-lucide="search"></i>
+                            <input type="text" id="filter-candidate-input" placeholder="Tìm tên bạn bè nhanh...">
+                        </div>
+                        <div class="selected-counter">
+                            Đã chọn: <b id="selected-count">0</b> bạn
+                        </div>
+                    </div>
+
+                    <!-- Candidates Grid (Multiple choice) -->
+                    <div id="candidates-grid" class="candidates-grid">
+                        <!-- Rendered dynamically by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Section 2: Feedback & Private Suggestion -->
+                <div class="feedback-section">
+                    <div class="section-title">
+                        <i data-lucide="message-square-heart"></i>
+                        <h3>Góp Ý & Đề Xuất Riêng (Tùy chọn)</h3>
+                    </div>
+                    <p class="section-desc">Bạn có tâm tư, nguyện vọng hay ý kiến đề xuất hoạt động cho lớp/Thầy Cô không?</p>
+                    <textarea 
+                        id="feedback-input" 
+                        rows="3" 
+                        placeholder="Nhập nội dung ý kiến hoặc đề xuất riêng tại đây (nếu có)..."
+                    ></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="submit-bar">
+                    <button id="submit-vote-btn" class="primary-btn btn-block">
+                        <i data-lucide="send"></i>
+                        <span>XÁC NHẬN NỘP PHIẾU BÌNH CHỌN</span>
+                    </button>
+                </div>
+            </main>
+        </div>
+
+        <!-- SCREEN 3: XÁC NHẬN THÀNH CÔNG -->
+        <div id="screen-success" class="screen">
+            <div class="success-card">
+                <div class="success-icon-wrapper">
+                    <i data-lucide="check-circle-2"></i>
+                </div>
+                <h2>Gửi Phiếu Thành Công!</h2>
+                <p id="success-summary">Cảm ơn bạn đã tham gia bình chọn.</p>
+
+                <div class="receipt-box" id="receipt-box">
+                    <!-- Dynamic receipt summary -->
+                </div>
+
+                <div class="success-actions">
+                    <button id="next-student-btn" class="primary-btn btn-block">
+                        <i data-lucide="user-plus"></i>
+                        <span>Bình chọn cho bạn tiếp theo</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- POPUP MODAL: DANH SÁCH 46 HỌC SINH -->
+        <div id="students-modal" class="modal-overlay hidden">
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3><i data-lucide="users"></i> Danh Sách Lớp 10B5 (46 bạn)</h3>
+                    <button type="button" id="close-modal-btn" class="close-btn" title="Đóng">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+                <div class="modal-search">
+                    <input type="text" id="modal-filter-input" placeholder="Lọc danh sách theo tên...">
+                </div>
+                <div class="modal-body" id="modal-students-list">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- LOADING OVERLAY -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="spinner"></div>
+            <p id="loading-text">Đang gửi dữ liệu về Google Drive...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="students.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
