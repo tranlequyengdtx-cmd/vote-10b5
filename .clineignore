@@ -1,0 +1,38 @@
+# ==========================================
+# 1. BẢO VỆ THÔNG TIN BẢO MẬT & API KEYS
+# ==========================================
+.env
+.env.*
+*.pem
+*.key
+*.cert
+credentials.json
+
+# ==========================================
+# 2. NGĂN SỬA ĐỔI FILE CẤU HÌNH HỆ THỐNG / GIT
+# ==========================================
+.git/
+.vscode/
+.clineignore
+
+# ==========================================
+# 3. NGĂN TRUY CẬP DỮ LIỆU SẢN XUẤT / DATABASE
+# ==========================================
+*.sqlite
+*.db
+/data/
+/backups/
+
+# ==========================================
+# 4. BỎ QUA THƯ MỤC BUILD & DEPENDENCIES
+# (Giúp Cline không tốn token đọc các file rác)
+# ==========================================
+node_modules/
+dist/
+build/
+.next/
+__pycache__/
+venv/
+.venv/
+/quanlylop_cli.py
+/quanlydiem_cli.py
