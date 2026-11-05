@@ -215,6 +215,67 @@ textarea:focus {
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 6px;
+    border-radius: 50%;
+    transition: color 0.2s;
+}
+
+/* PIN Section Styles */
+.pin-section {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--glass-border);
+    animation: fadeInSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pin-wrapper input {
+    letter-spacing: 4px;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.pin-helper {
+    margin-top: 8px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.pin-error {
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: #f87171;
+    font-weight: 500;
+    padding: 8px 12px;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--radius-sm);
+    animation: shake 0.35s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+}
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .icon-btn:hover {

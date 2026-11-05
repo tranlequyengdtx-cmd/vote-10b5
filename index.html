@@ -49,7 +49,32 @@
                     <!-- Autocomplete Suggestions List -->
                     <div id="suggestions-box" class="suggestions-box hidden"></div>
 
-                    <div class="divider-text"><span>hoặc</span></div>
+                    <!-- Khung nhập mã PIN Ngày Sinh Xác Thực -->
+                    <div id="pin-section" class="pin-section hidden">
+                        <label for="pin-input">
+                            <i data-lucide="shield-check"></i>
+                            <span>Mã PIN xác thực (4 số Ngày Tháng Sinh):</span>
+                        </label>
+                        <div class="search-input-wrapper pin-wrapper">
+                            <input 
+                                type="password" 
+                                id="pin-input" 
+                                placeholder="VD: Sinh 05/09 thì nhập 0509" 
+                                maxlength="4"
+                                inputmode="numeric"
+                                autocomplete="off"
+                            >
+                            <button type="button" id="toggle-pin-visibility" class="icon-btn" title="Hiện/ẩn mã PIN">
+                                <i data-lucide="eye" id="pin-eye-icon"></i>
+                            </button>
+                        </div>
+                        <div id="pin-helper" class="pin-helper">
+                            <span>💡 Nhập 4 số Ngày & Tháng sinh (DDMM) để bảo mật phiếu bầu của bạn.</span>
+                        </div>
+                        <div id="pin-error" class="pin-error hidden"></div>
+                    </div>
+
+                    <div class="divider-text" id="login-divider"><span>hoặc</span></div>
 
                     <button type="button" id="open-modal-btn" class="secondary-btn btn-block">
                         <i data-lucide="list"></i>
@@ -174,7 +199,7 @@
     </div>
 
     <!-- Scripts -->
-    <script src="students.js?v=2"></script>
-    <script src="app.js?v=2"></script>
+    <script src="students.js?v=3"></script>
+    <script src="app.js?v=3"></script>
 </body>
 </html>

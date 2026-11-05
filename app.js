@@ -25,6 +25,11 @@ const elements = {
     studentInput: document.getElementById('student-input'),
     clearInputBtn: document.getElementById('clear-input-btn'),
     suggestionsBox: document.getElementById('suggestions-box'),
+    pinSection: document.getElementById('pin-section'),
+    pinInput: document.getElementById('pin-input'),
+    togglePinVisibility: document.getElementById('toggle-pin-visibility'),
+    pinEyeIcon: document.getElementById('pin-eye-icon'),
+    pinError: document.getElementById('pin-error'),
     openModalBtn: document.getElementById('open-modal-btn'),
     loginSubmitBtn: document.getElementById('login-submit-btn'),
     
@@ -118,8 +123,19 @@ function removeVietnameseTones(str) {
 }
 
 // ==============================================================================
-// XỬ LÝ MÀN HÌNH 1: ĐĂNG NHẬP / CHỌN TÊN
+// XỬ LÝ MÀN HÌNH 1: ĐĂNG NHẬP & XÁC THỰC MÃ PIN NGÀY SINH
 // ==============================================================================
+
+// Hàm băm bảo mật SHA-256 (Web Crypto API)
+async function hashStudentPin(name, pin) {
+    const text = `${name}_${pin.trim()}`;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 function setupEventListeners() {
     // Tìm kiếm với Autocomplete
     elements.studentInput.addEventListener('input', handleStudentInput);
@@ -129,15 +145,40 @@ function setupEventListeners() {
         elements.studentInput.value = '';
         elements.clearInputBtn.classList.add('hidden');
         elements.suggestionsBox.classList.add('hidden');
+        elements.pinSection.classList.add('hidden');
+        elements.pinInput.value = '';
+        hidePinError();
         elements.loginSubmitBtn.disabled = true;
+        elements.loginSubmitBtn.querySelector('span').textContent = "Vào bình chọn";
         elements.studentInput.focus();
     });
 
-    elements.loginSubmitBtn.addEventListener('click', () => {
-        const name = elements.studentInput.value.trim();
-        if (STUDENTS_LIST.includes(name)) {
-            proceedToVote(name);
+    // Xử lý ô PIN
+    elements.pinInput.addEventListener('input', () => {
+        hidePinError();
+        // Tự động xác thực ngay khi nhập đủ 4 số
+        if (elements.pinInput.value.trim().length === 4) {
+            verifyPinAndLogin();
         }
+    });
+
+    elements.pinInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            verifyPinAndLogin();
+        }
+    });
+
+    // Ẩn / Hiện mã PIN
+    elements.togglePinVisibility.addEventListener('click', () => {
+        const isPass = elements.pinInput.type === 'password';
+        elements.pinInput.type = isPass ? 'text' : 'password';
+        elements.pinEyeIcon.setAttribute('data-lucide', isPass ? 'eye-off' : 'eye');
+        if (window.lucide) lucide.createIcons();
+    });
+
+    elements.loginSubmitBtn.addEventListener('click', () => {
+        verifyPinAndLogin();
     });
 
     // Modal Danh sách lớp
@@ -179,6 +220,67 @@ function setupEventListeners() {
     elements.nextStudentBtn.addEventListener('click', resetToLogin);
 }
 
+// Khi người dùng chọn 1 bạn từ ô nhập hoặc từ modal
+function selectStudentForLogin(name) {
+    elements.studentInput.value = name;
+    elements.clearInputBtn.classList.remove('hidden');
+    elements.suggestionsBox.classList.add('hidden');
+    
+    // Mở khung nhập PIN xác thực
+    elements.pinSection.classList.remove('hidden');
+    elements.pinInput.value = '';
+    hidePinError();
+    elements.loginSubmitBtn.disabled = false;
+    elements.loginSubmitBtn.querySelector('span').textContent = "Xác nhận & Vào bình chọn";
+    if (window.lucide) lucide.createIcons();
+
+    setTimeout(() => {
+        elements.pinInput.focus();
+    }, 150);
+}
+
+// Kiểm tra mã PIN ngày sinh
+async function verifyPinAndLogin() {
+    const name = elements.studentInput.value.trim();
+    if (!STUDENTS_SECURITY_DATA[name]) {
+        alert("Vui lòng chọn họ và tên của bạn trong danh sách trước.");
+        return;
+    }
+
+    const pin = elements.pinInput.value.trim();
+    if (!pin) {
+        showPinError("Vui lòng nhập 4 số Ngày & Tháng sinh (VD: 0509)!");
+        elements.pinInput.focus();
+        return;
+    }
+
+    // Hash và so khớp
+    const currentHash = await hashStudentPin(name, pin);
+    const validHashes = STUDENTS_SECURITY_DATA[name] || [];
+
+    if (validHashes.includes(currentHash)) {
+        hidePinError();
+        proceedToVote(name);
+    } else {
+        showPinError("❌ Mã PIN ngày sinh chưa đúng! Vui lòng kiểm tra lại ngày & tháng sinh (DDMM).");
+        elements.pinInput.select();
+    }
+}
+
+function showPinError(msg) {
+    elements.pinError.textContent = msg;
+    elements.pinError.classList.remove('hidden');
+    // Kích hoạt animation rung
+    elements.pinError.classList.remove('shake');
+    void elements.pinError.offsetWidth;
+    elements.pinError.classList.add('shake');
+}
+
+function hidePinError() {
+    elements.pinError.textContent = '';
+    elements.pinError.classList.add('hidden');
+}
+
 function handleStudentInput(e) {
     const query = e.target.value.trim();
     if (query.length > 0) {
@@ -186,7 +288,11 @@ function handleStudentInput(e) {
     } else {
         elements.clearInputBtn.classList.add('hidden');
         elements.suggestionsBox.classList.add('hidden');
+        elements.pinSection.classList.add('hidden');
+        elements.pinInput.value = '';
+        hidePinError();
         elements.loginSubmitBtn.disabled = true;
+        elements.loginSubmitBtn.querySelector('span').textContent = "Vào bình chọn";
         return;
     }
 
@@ -205,10 +311,11 @@ function handleStudentInput(e) {
     // Nếu người dùng nhập chuẩn xác đúng 100% họ tên có trong danh sách
     const exactMatch = STUDENTS_LIST.find(name => name.toLowerCase() === query.toLowerCase());
     if (exactMatch) {
-        elements.studentInput.value = exactMatch;
-        elements.loginSubmitBtn.disabled = false;
+        selectStudentForLogin(exactMatch);
     } else {
+        elements.pinSection.classList.add('hidden');
         elements.loginSubmitBtn.disabled = true;
+        elements.loginSubmitBtn.querySelector('span').textContent = "Vào bình chọn";
     }
 }
 
@@ -222,10 +329,7 @@ function renderSuggestions(matches) {
             <i data-lucide="check" style="width: 16px; height: 16px; opacity: 0.5;"></i>
         `;
         item.addEventListener('click', () => {
-            elements.studentInput.value = name;
-            elements.suggestionsBox.classList.add('hidden');
-            elements.loginSubmitBtn.disabled = false;
-            proceedToVote(name);
+            selectStudentForLogin(name);
         });
         elements.suggestionsBox.appendChild(item);
     });
@@ -267,9 +371,7 @@ function renderModalStudentsList(filterText = '') {
         `;
         row.addEventListener('click', () => {
             elements.studentsModal.classList.add('hidden');
-            elements.studentInput.value = name;
-            elements.loginSubmitBtn.disabled = false;
-            proceedToVote(name);
+            selectStudentForLogin(name);
         });
         elements.modalStudentsList.appendChild(row);
     });
@@ -298,7 +400,11 @@ function resetToLogin() {
     elements.studentInput.value = '';
     elements.clearInputBtn.classList.add('hidden');
     elements.suggestionsBox.classList.add('hidden');
+    elements.pinSection.classList.add('hidden');
+    elements.pinInput.value = '';
+    hidePinError();
     elements.loginSubmitBtn.disabled = true;
+    elements.loginSubmitBtn.querySelector('span').textContent = "Vào bình chọn";
 
     showScreen('login');
 }
