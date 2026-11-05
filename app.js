@@ -2,7 +2,7 @@
 // CẤU HÌNH ĐƯỜNG DẪN GOOGLE APPS SCRIPT
 // Thầy chỉ cần dán URL Web App của Thầy vào đây:
 // ==============================================================================
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwPzN1jQ49j55qT4uL54XWn6q_Placeholder/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwOTOlh0sjr8QZzUdFsol7HhCv79lQbyoBF0VZyPIpcz973Il0fnM_gmMvTfSehqsZbVg/exec';
 
 // Trạng thái ứng dụng
 const state = {
