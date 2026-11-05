@@ -413,13 +413,14 @@ async function handleVoteSubmit() {
     try {
         console.log("Đang gửi dữ liệu về Google Apps Script...", payload);
         
-        // Gửi không đồng bộ với mode no-cors theo đúng chuẩn Mathflow
+        // Gửi không đồng bộ với mode no-cors theo chuẩn Google Apps Script
+        // Dùng text/plain để tránh bị trình duyệt (Safari/Chrome) chặn Preflight CORS
         await fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
             mode: 'no-cors',
             cache: 'no-cache',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'text/plain;charset=utf-8'
             },
             body: JSON.stringify(payload)
         });
