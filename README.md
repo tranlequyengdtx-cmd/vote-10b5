@@ -7,15 +7,17 @@
 ## 🌟 Điểm Nổi Bật
 
 1. **Giao diện hiện đại giống Mathflow:** Thiết kế kính mờ (Glassmorphism), Dark/Light mode, font Outfit, tương thích 100% trên điện thoại học sinh.
-2. **Đăng nhập siêu tốc (Không cần mật khẩu):** 
-   - Ô tìm kiếm gợi ý thông minh (gõ 1-2 chữ cái là hiện họ tên đầy đủ).
-   - Nút **"📋 Xem danh sách 46 bạn"** mở popup bảng chọn 1 chạm.
-3. **Bình chọn kiểu trắc nghiệm nhiều lựa chọn:** Tích chọn các bạn xứng đáng, tên người đang bình chọn tự động được loại trừ.
-4. **Mục Góp ý & Đề xuất riêng:** Học sinh có thể gửi gắm tâm tư, nguyện vọng hoặc đề xuất hoạt động cho lớp/Thầy Cô.
-5. **Dashboard Tự Động Hóa 100% trên Google Drive:**
-   - **Mục tiêu 1:** Hiển thị tức thì % tiến độ cả lớp (ví dụ: `42/46 học sinh đã nộp`) kèm danh sách cụ thể những em chưa nộp.
-   - **Mục tiêu 2:** Bảng vàng **TOP 3 cao nhất** (🥇, 🥈, 🥉) tự động nhảy số và sắp xếp lại ngay khi học sinh bấm nộp.
-   - **Mục tiêu 3:** Lưu toàn bộ nhật ký và ý kiến đóng góp riêng biệt, minh bạch.
+2. **Đăng nhập bảo mật chống bầu hộ bằng Mã PIN Ngày Sinh (DDMM):** 
+   - Ô tìm kiếm gợi ý thông minh hoặc bấm popup chọn tên.
+   - Học sinh nhập 4 số Ngày & Tháng sinh (VD: `0509`, `2612`) để xác thực bảo vệ phiếu bầu.
+   - Toàn bộ ngày sinh được băm một chiều **SHA-256**, không thể dịch ngược hay lộ thông tin.
+3. **Cơ chế Trọng số (Hệ số phiếu):** Thầy có thể đặt hệ số 2, 1.5, 3... cho Lớp trưởng/Ban cán sự ở Cột F trên Sheet Dashboard. Mỗi lượt chọn của bạn đó sẽ được nhân với hệ số này.
+4. **Bắt đầu đợt mới trong 1 Click:** Menu tự động trên Google Sheets giúp Thầy sao lưu kết quả đợt cũ và reset bảng sạch sẽ cho đợt mới.
+5. **Mục Góp ý & Đề xuất riêng:** Học sinh gửi ý kiến riêng tư kèm theo phiếu.
+6. **Dashboard Tự Động Hóa 100% trên Google Drive:**
+   - Cập nhật tiến độ cả lớp (ví dụ: `42/46 học sinh đã nộp`).
+   - Bảng vàng **TOP 3 cao nhất** (🥇, 🥈, 🥉) tự động nhảy số theo Tổng điểm quy đổi.
+   - Lưu nhật ký chi tiết và lời nhắn riêng biệt.
 
 ---
 
