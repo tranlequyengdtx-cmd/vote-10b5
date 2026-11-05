@@ -50,7 +50,7 @@ function khoiTaoDashboard() {
     sheetDash = ss.insertSheet(SHEET_DASHBOARD, 0);
   }
   sheetDash.clear();
-  sheetDash.setGridlines(true);
+  // (gridlines hiển thị mặc định, không cần gọi thêm)
 
   // 2. Tạo Sheet NHAT_KY_VA_GOP_Y
   let sheetLog = ss.getSheetByName(SHEET_LOG);
