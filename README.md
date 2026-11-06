@@ -1,6 +1,6 @@
-# 🗳️ Cổng Bình Chọn & Đóng Góp Ý Kiến Lớp 10B5 (Phong cách Mathflow)
+# 📢 Cổng Khảo Sát Nề Nếp & Phản Ánh Làm Ồn Lớp 10B5 (Cuối Tuần)
 
-Ứng dụng web tĩnh siêu nhẹ, tốc độ tức thì (0.1 giây), hoạt động trực tiếp trên **GitHub Pages** (không cần server trung gian, không có độ trễ). Kết quả và ý kiến góp ý của học sinh được tự động đổ về **Google Drive (Google Sheet)** của Thầy theo thời gian thực.
+Ứng dụng web tĩnh siêu nhẹ, tốc độ tức thì (0.1 giây), hoạt động trực tiếp trên **GitHub Pages** (không cần server trung gian, không có độ trễ). Kết quả phản ánh nề nếp và ý kiến của học sinh được tự động đổ về **Google Drive (Google Sheet)** của Thầy theo thời gian thực để GVCN kịp thời nhắc nhở, uốn nắn học sinh làm ồn trong tuần.
 
 ---
 
@@ -11,12 +11,15 @@
    - Ô tìm kiếm gợi ý thông minh hoặc bấm popup chọn tên.
    - Học sinh nhập 4 số Ngày & Tháng sinh (VD: `0509`, `2612`) để xác thực bảo vệ phiếu bầu.
    - Toàn bộ ngày sinh được băm một chiều **SHA-256**, không thể dịch ngược hay lộ thông tin.
-3. **Cơ chế Trọng số (Hệ số phiếu):** Thầy có thể đặt hệ số 2, 1.5, 3... cho Lớp trưởng/Ban cán sự ở Cột F trên Sheet Dashboard. Mỗi lượt chọn của bạn đó sẽ được nhân với hệ số này.
-4. **Bắt đầu đợt mới trong 1 Click:** Menu tự động trên Google Sheets giúp Thầy sao lưu kết quả đợt cũ và reset bảng sạch sẽ cho đợt mới.
-5. **Mục Góp ý & Đề xuất riêng:** Học sinh gửi ý kiến riêng tư kèm theo phiếu.
-6. **Dashboard Tự Động Hóa 100% trên Google Drive:**
+3. **Cơ chế Chống Spam Vote (Mỗi bạn chỉ nộp 1 lần/tuần):**
+   - Kiểm tra 3 lớp (Bộ nhớ trình duyệt, Tra cứu trực tuyến với Google Sheet, và Chốt chặn cứng ở Backend).
+   - Ngăn chặn triệt để hành vi cố tình vote nhiều lần để "bơm điểm" cho bạn khác.
+4. **Cơ chế Trọng số (Hệ số phiếu):** Thầy có thể đặt hệ số 2, 1.5, 3... cho Lớp trưởng / Ban cán sự nề nếp ở Cột F trên Sheet Dashboard. Mỗi lượt chọn của bạn đó sẽ được nhân với hệ số này.
+5. **Bắt đầu đợt mới trong 1 Click:** Menu tự động trên Google Sheets giúp Thầy sao lưu kết quả tuần cũ và reset bảng sạch sẽ cho tuần mới (vẫn giữ nguyên Cột F Hệ số).
+6. **Mục Góp ý & Phản ánh riêng:** Học sinh gửi ý kiến riêng tư cho GVCN kèm theo phiếu.
+7. **Dashboard Tự Động Hóa 100% trên Google Drive:**
    - Cập nhật tiến độ cả lớp (ví dụ: `42/46 học sinh đã nộp`).
-   - Bảng vàng **TOP 3 cao nhất** (🥇, 🥈, 🥉) tự động nhảy số theo Tổng điểm quy đổi.
+   - Bảng cảnh báo **TOP 3 bạn làm ồn nhiều nhất** (🔴 Top 1, 🟠 Top 2, 🟡 Top 3) tự động cập nhật theo điểm phản ánh.
    - Lưu nhật ký chi tiết và lời nhắn riêng biệt.
 
 ---

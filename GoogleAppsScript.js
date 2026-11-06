@@ -279,7 +279,7 @@ function khoiTaoDashboard() {
     sheetLog = ss.insertSheet(SHEET_LOG, 1);
   }
   if (sheetLog.getLastRow() === 0) {
-    sheetLog.appendRow(["Thời Gian", "Người Bình Chọn", "Hệ Số Phiếu", "Các Bạn Được Chọn", "Ý Kiến Đóng Góp / Đề Xuất"]);
+    sheetLog.appendRow(["Thời Gian", "Người Phản Ánh", "Hệ Số Phiếu", "Các Bạn Làm Ồn Đã Chọn", "Ý Kiến Phản Ánh / Đề Xuất Cho GVCN"]);
     sheetLog.getRange("A1:E1").setBackground("#1e293b").setFontColor("#ffffff").setFontWeight("bold");
     sheetLog.setColumnWidth(1, 160);
     sheetLog.setColumnWidth(2, 180);
@@ -291,9 +291,9 @@ function khoiTaoDashboard() {
   // --- THIẾT KẾ GIAO DIỆN TRANG DASHBOARD ---
   // A. Tiêu đề
   sheetDash.getRange("A1:G1").merge()
-    .setValue("📊 BẢNG THEO DÕI TIẾN ĐỘ & KẾT QUẢ BÌNH CHỌN LỚP 10B5")
+    .setValue("📢 BẢNG THEO DÕI NỀ NẾP & PHẢN ÁNH LÀM ỒN TRONG GIỜ HỌC - LỚP 10B5")
     .setFontSize(14).setFontWeight("bold").setFontColor("#ffffff")
-    .setBackground("#0ea5e9").setHorizontalAlignment("center").setVerticalAlignment("middle");
+    .setBackground("#0284c7").setHorizontalAlignment("center").setVerticalAlignment("middle");
   sheetDash.setRowHeight(1, 40);
 
   // B. Khung Thống kê tiến độ
@@ -306,20 +306,20 @@ function khoiTaoDashboard() {
   sheetDash.getRange("A2:G2").setBackground("#f1f5f9").setFontSize(11).setVerticalAlignment("middle");
   sheetDash.setRowHeight(2, 28);
 
-  // C. BẢNG VÀNG TOP 3 BÌNH CHỌN CAO NHẤT
-  sheetDash.getRange("A4:G4").merge().setValue("🏆 BẢNG VÀNG TOP 3 HỌC SINH CÓ ĐIỂM BÌNH CHỌN CAO NHẤT")
-    .setFontWeight("bold").setFontColor("#ffffff").setBackground("#8b5cf6").setHorizontalAlignment("center");
+  // C. BẢNG CẢNH BÁO TOP 3 HỌC SINH LÀM ỒN NHIỀU NHẤT
+  sheetDash.getRange("A4:G4").merge().setValue("⚠️ TOP 3 HỌC SINH BỊ PHẢN ÁNH LÀM ỒN / MẤT TRẬT TỰ NHIỀU NHẤT")
+    .setFontWeight("bold").setFontColor("#ffffff").setBackground("#dc2626").setHorizontalAlignment("center");
   sheetDash.setRowHeight(4, 30);
   
-  sheetDash.getRange("A5:G5").setValues([["Huy Chương", "Họ và Tên", "Điểm Quy Đổi", "Tỉ Lệ Được Bầu", "Xếp Loại", "", ""]]);
-  sheetDash.getRange("A5:G5").setFontWeight("bold").setBackground("#ede9fe").setHorizontalAlignment("center");
+  sheetDash.getRange("A5:G5").setValues([["Thứ Hạng", "Họ và Tên", "Điểm Làm Ồn", "Tỉ Lệ Bị Phản Ánh", "Biện Pháp Xử Lý", "", ""]]);
+  sheetDash.getRange("A5:G5").setFontWeight("bold").setBackground("#fee2e2").setHorizontalAlignment("center");
   sheetDash.getRange("E5:G5").merge();
 
-  // Công thức tự động trích xuất Top 1, Top 2, Top 3 theo Điểm Bình Chọn (Cột D)
+  // Công thức tự động trích xuất Top 1, Top 2, Top 3 theo Điểm Làm Ồn (Cột D)
   sheetDash.getRange("A6:G8").setValues([
-    ["🥇 HẠNG 1", `=INDEX(SORT(B12:F57, 3, FALSE), 1, 1)`, `=INDEX(SORT(B12:F57, 3, FALSE), 1, 3)`, `=IF(D2>0, TEXT(C6/D2, "0.0%"), "0%")`, "Xuất sắc nhất", "", ""],
-    ["🥈 HẠNG 2", `=INDEX(SORT(B12:F57, 3, FALSE), 2, 1)`, `=INDEX(SORT(B12:F57, 3, FALSE), 2, 3)`, `=IF(D2>0, TEXT(C7/D2, "0.0%"), "0%")`, "Tiêu biểu", "", ""],
-    ["🥉 HẠNG 3", `=INDEX(SORT(B12:F57, 3, FALSE), 3, 1)`, `=INDEX(SORT(B12:F57, 3, FALSE), 3, 3)`, `=IF(D2>0, TEXT(C8/D2, "0.0%"), "0%")`, "Tiêu biểu", "", ""]
+    ["🔴 TOP 1 (Nhiều nhất)", `=INDEX(SORT(B12:F57, 3, FALSE), 1, 1)`, `=INDEX(SORT(B12:F57, 3, FALSE), 1, 3)`, `=IF(D2>0, TEXT(C6/D2, "0.0%"), "0%")`, "Nhắc nhở & Xử lý nghiêm", "", ""],
+    ["🟠 TOP 2", `=INDEX(SORT(B12:F57, 3, FALSE), 2, 1)`, `=INDEX(SORT(B12:F57, 3, FALSE), 2, 3)`, `=IF(D2>0, TEXT(C7/D2, "0.0%"), "0%")`, "Nhắc nhở trước lớp", "", ""],
+    ["🟡 TOP 3", `=INDEX(SORT(B12:F57, 3, FALSE), 3, 1)`, `=INDEX(SORT(B12:F57, 3, FALSE), 3, 3)`, `=IF(D2>0, TEXT(C8/D2, "0.0%"), "0%")`, "Nhắc nhở nề nếp", "", ""]
   ]);
   sheetDash.getRange("E6:G6").merge();
   sheetDash.getRange("E7:G7").merge();
@@ -331,11 +331,11 @@ function khoiTaoDashboard() {
   sheetDash.getRange("E6:G8").setHorizontalAlignment("center");
 
   // D. DANH SÁCH CHI TIẾT 46 HỌC SINH
-  sheetDash.getRange("A10:G10").merge().setValue("📋 DANH SÁCH CHI TIẾT THEO DÕI CẢ LỚP (46 HỌC SINH)")
+  sheetDash.getRange("A10:G10").merge().setValue("📋 DANH SÁCH THEO DÕI NỀ NẾP CHI TIẾT CẢ LỚP (46 HỌC SINH)")
     .setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff").setHorizontalAlignment("center");
   sheetDash.setRowHeight(10, 30);
   
-  sheetDash.getRange("A11:G11").setValues([["STT", "Họ và Tên", "Trạng Thái Nộp", "Điểm Bình Chọn", "Thời Gian Nộp", "Hệ Số Bầu (Trọng Số)", "Ngày Sinh"]]);
+  sheetDash.getRange("A11:G11").setValues([["STT", "Họ và Tên", "Trạng Thái Nộp", "Điểm Làm Ồn", "Thời Gian Nộp", "Hệ Số Bầu (Trọng Số)", "Ngày Sinh"]]);
   sheetDash.getRange("A11:G11").setFontWeight("bold").setBackground("#e2e8f0").setHorizontalAlignment("center");
 
   // Điền danh sách 46 bạn
@@ -465,10 +465,22 @@ function doPost(e) {
     const dataRange = sheetDash.getRange(12, 1, 46, 7);
     const values = dataRange.getValues();
 
-    // 1. Tìm voter, lấy trọng số (Cột F - index 5), và đánh dấu đã nộp
+    // 1. Tìm voter, kiểm tra xem đã nộp chưa, lấy trọng số (Cột F - index 5)
+    let voterFound = false;
     let voterWeight = 1;
     for (let i = 0; i < values.length; i++) {
       if (values[i][1] === voter) {
+        voterFound = true;
+
+        // KIỂM TRA CHỐNG VOTE NHIỀU LẦN: Nếu đã nộp trước đó thì từ chối ngay lập tức
+        const currentStatus = String(values[i][2] || "");
+        if (currentStatus.indexOf("Đã nộp") !== -1) {
+          return ContentService.createTextOutput(JSON.stringify({
+            status: "already_voted",
+            message: `Học sinh "${voter}" đã nộp phiếu bình chọn trước đó rồi! Mỗi bạn chỉ được gửi 1 lần.`
+          })).setMimeType(ContentService.MimeType.JSON);
+        }
+
         values[i][2] = "✅ Đã nộp phiếu";
         values[i][4] = timestamp;
         const w = parseFloat(values[i][5]);
@@ -477,6 +489,13 @@ function doPost(e) {
         }
         break;
       }
+    }
+
+    if (!voterFound) {
+      return ContentService.createTextOutput(JSON.stringify({ 
+        status: "error", 
+        message: `Không tìm thấy học sinh "${voter}" trong danh sách lớp 10B5!` 
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
     // 2. Ghi nhật ký vào Sheet NHAT_KY_VA_GOP_Y (Kèm hệ số phiếu)
@@ -507,9 +526,46 @@ function doPost(e) {
 }
 
 /**
- * HÀM 4: KIỂM TRA TRẠNG THÁI WEB (doGet)
+ * HÀM 4: KIỂM TRA TRẠNG THÁI WEB & HỌC SINH ĐÃ VOTE CHƯA (doGet)
  */
 function doGet(e) {
-  return ContentService.createTextOutput("Hệ thống Google Apps Script cho Lớp 10B5 đang hoạt động bình thường 24/7.")
-    .setMimeType(ContentService.MimeType.TEXT);
+  try {
+    const action = e && e.parameter ? e.parameter.action : "";
+    const voter = e && e.parameter ? (e.parameter.voter || "").trim() : "";
+
+    // Kiểm tra trạng thái nộp phiếu của 1 học sinh cụ thể
+    if (action === "check" && voter) {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const sheetDash = ss.getSheetByName(SHEET_DASHBOARD);
+      
+      if (!sheetDash) {
+        return ContentService.createTextOutput(JSON.stringify({ status: "success", voter: voter, hasVoted: false }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+
+      const values = sheetDash.getRange(12, 1, 46, 3).getValues();
+      let hasVoted = false;
+      for (let i = 0; i < values.length; i++) {
+        if (values[i][1] === voter) {
+          const status = String(values[i][2] || "");
+          if (status.indexOf("Đã nộp") !== -1) {
+            hasVoted = true;
+          }
+          break;
+        }
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({ 
+        status: "success", 
+        voter: voter, 
+        hasVoted: hasVoted 
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    return ContentService.createTextOutput("Hệ thống Google Apps Script cho Lớp 10B5 đang hoạt động bình thường 24/7.")
+      .setMimeType(ContentService.MimeType.TEXT);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }

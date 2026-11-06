@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bình Chọn & Đóng Góp Ý Kiến - Lớp 10B5</title>
+    <title>Khảo Sát Nề Nếp & Phản Ánh Làm Ồn - Lớp 10B5</title>
     <link rel="stylesheet" href="style.css">
     <!-- Google Fonts: Outfit -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -21,11 +21,11 @@
         <div id="screen-login" class="screen active">
             <header class="app-header">
                 <div class="logo-badge">
-                    <i data-lucide="award"></i>
+                    <i data-lucide="bell-ring"></i>
                     <span>LỚP 10B5</span>
                 </div>
-                <h1>Cổng Bình Chọn & Góp Ý</h1>
-                <p class="subtitle">Không cần mật khẩu • Thao tác nhanh trong 30 giây</p>
+                <h1>Khảo Sát Nề Nếp Cuối Tuần</h1>
+                <p class="subtitle">Ghi nhận tình trạng làm ồn trong lớp • Bảo mật & Khách quan</p>
             </header>
 
             <main class="login-main">
@@ -69,7 +69,7 @@
                             </button>
                         </div>
                         <div id="pin-helper" class="pin-helper">
-                            <span>💡 Nhập 4 số Ngày & Tháng sinh (DDMM) để bảo mật phiếu bầu của bạn.</span>
+                            <span>💡 Nhập 4 số Ngày & Tháng sinh (DDMM) để bảo vệ phiếu của bạn.</span>
                         </div>
                         <div id="pin-error" class="pin-error hidden"></div>
                     </div>
@@ -84,7 +84,7 @@
 
                 <div class="action-footer">
                     <button id="login-submit-btn" class="primary-btn btn-block" disabled>
-                        <span>Vào bình chọn</span>
+                        <span>Vào đánh giá nề nếp</span>
                         <i data-lucide="arrow-right"></i>
                     </button>
                 </div>
@@ -104,8 +104,8 @@
                         <span>Đổi tên</span>
                     </button>
                 </div>
-                <h2>Để xây dựng một môi trường học tập hiệu quả, em hãy bình chọn các bạn đã làm ồn trong giờ học để GVCN có biện pháp xử lý thoả đáng</h2>
-                <p class="section-desc">Bấm chọn vào tên của các bạn vi phạm (có thể chọn nhiều bạn).</p>
+                <h2>Để xây dựng môi trường học tập tập trung, em hãy chọn các bạn thường xuyên làm ồn / mất trật tự trong tuần để GVCN có biện pháp uốn nắn kịp thời</h2>
+                <p class="section-desc">Bấm chọn vào tên của các bạn vi phạm nề nếp (có thể chọn nhiều bạn).</p>
             </header>
 
             <main class="vote-main">
@@ -130,14 +130,14 @@
                 <!-- Section 2: Feedback & Private Suggestion -->
                 <div class="feedback-section">
                     <div class="section-title">
-                        <i data-lucide="message-square-heart"></i>
-                        <h3>Góp Ý & Đề Xuất Riêng (Tùy chọn)</h3>
+                        <i data-lucide="message-square"></i>
+                        <h3>Ý Kiến Phản Ánh / Đề Xuất Cho GVCN (Tùy chọn)</h3>
                     </div>
-                    <p class="section-desc">Bạn có tâm tư, nguyện vọng hay ý kiến đề xuất hoạt động cho lớp/Thầy Cô không?</p>
+                    <p class="section-desc">Em có phản ánh cụ thể về giờ học nào hoặc đề xuất biện pháp chấn chỉnh nề nếp cho Thầy không?</p>
                     <textarea 
                         id="feedback-input" 
                         rows="3" 
-                        placeholder="Nhập nội dung ý kiến hoặc đề xuất riêng tại đây (nếu có)..."
+                        placeholder="Nhập nội dung phản ánh hoặc đề xuất riêng tại đây (nếu có)..."
                     ></textarea>
                 </div>
 
@@ -145,7 +145,7 @@
                 <div class="submit-bar">
                     <button id="submit-vote-btn" class="primary-btn btn-block">
                         <i data-lucide="send"></i>
-                        <span>XÁC NHẬN NỘP PHIẾU BÌNH CHỌN</span>
+                        <span>XÁC NHẬN NỘP PHIẾU PHẢN ÁNH</span>
                     </button>
                 </div>
             </main>
@@ -158,7 +158,7 @@
                     <i data-lucide="check-circle-2"></i>
                 </div>
                 <h2>Gửi Phiếu Thành Công!</h2>
-                <p id="success-summary">Cảm ơn bạn đã tham gia bình chọn.</p>
+                <p id="success-summary">Cảm ơn em đã góp phần xây dựng nề nếp lớp học.</p>
 
                 <div class="receipt-box" id="receipt-box">
                     <!-- Dynamic receipt summary -->
@@ -166,8 +166,8 @@
 
                 <div class="success-actions">
                     <button id="next-student-btn" class="primary-btn btn-block">
-                        <i data-lucide="user-plus"></i>
-                        <span>Bình chọn cho bạn tiếp theo</span>
+                        <i data-lucide="user-check"></i>
+                        <span>Hoàn tất / Học sinh tiếp theo</span>
                     </button>
                 </div>
             </div>

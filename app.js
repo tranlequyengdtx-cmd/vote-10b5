@@ -260,11 +260,70 @@ async function verifyPinAndLogin() {
 
     if (validHashes.includes(currentHash)) {
         hidePinError();
-        proceedToVote(name);
+
+        // 1. Kiểm tra nhanh trong bộ nhớ thiết bị (Local Storage)
+        const votedList = JSON.parse(localStorage.getItem('voted_students') || '[]');
+        if (votedList.includes(name)) {
+            alert(`⚠️ Bạn "${name}" đã nộp phiếu bình chọn rồi!\nTheo quy định, mỗi học sinh chỉ được gửi 1 lần duy nhất.`);
+            return;
+        }
+
+        // 2. Kiểm tra trực tuyến trên Google Sheets Dashboard
+        checkOnlineStatusAndProceed(name);
     } else {
         showPinError("❌ Mã PIN ngày sinh chưa đúng! Vui lòng kiểm tra lại ngày & tháng sinh (DDMM).");
         elements.pinInput.select();
     }
+}
+
+// Kiểm tra thời gian thực trên Google Sheets trước khi cho vào màn hình bình chọn
+async function checkOnlineStatusAndProceed(name) {
+    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes('AKfycbw...')) {
+        proceedToVote(name);
+        return;
+    }
+
+    // Hiển thị loading nhẹ
+    elements.loadingOverlay.classList.remove('hidden');
+    const loadingText = elements.loadingOverlay.querySelector('p');
+    const oldText = loadingText ? loadingText.textContent : 'Đang xử lý...';
+    if (loadingText) loadingText.textContent = 'Đang kiểm tra trạng thái phiếu bầu...';
+
+    let hasVotedOnline = false;
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout để tránh gián đoạn nếu mạng chậm
+
+        const resp = await fetch(`${GOOGLE_SCRIPT_URL}?action=check&voter=${encodeURIComponent(name)}`, {
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (resp.ok) {
+            const result = await resp.json();
+            if (result && result.hasVoted) {
+                hasVotedOnline = true;
+            }
+        }
+    } catch (e) {
+        console.warn("Không thể kiểm tra online trước, dựa vào chốt chặn bảo mật backend:", e);
+    } finally {
+        elements.loadingOverlay.classList.add('hidden');
+        if (loadingText) loadingText.textContent = oldText;
+    }
+
+    if (hasVotedOnline) {
+        // Lưu vào Local Storage để lần sau không cần query lại
+        const votedList = JSON.parse(localStorage.getItem('voted_students') || '[]');
+        if (!votedList.includes(name)) {
+            votedList.push(name);
+            localStorage.setItem('voted_students', JSON.stringify(votedList));
+        }
+        alert(`⚠️ Bạn "${name}" đã nộp phiếu bình chọn trước đó trên hệ thống!\nTheo quy định, mỗi học sinh chỉ được gửi phiếu một lần duy nhất.`);
+        return;
+    }
+
+    proceedToVote(name);
 }
 
 function showPinError(msg) {
@@ -489,18 +548,18 @@ async function handleVoteSubmit() {
 
     // Xác nhận nếu chưa chọn ai và chưa viết feedback
     if (selectedList.length === 0 && !feedback) {
-        alert("Vui lòng tích chọn ít nhất 1 bạn học sinh hoặc nhập ý kiến góp ý trước khi nộp!");
+        alert("Vui lòng tích chọn ít nhất 1 bạn học sinh làm ồn hoặc nhập ý kiến phản ánh trước khi nộp!");
         return;
     }
 
-    let confirmMsg = `Bạn đang nộp phiếu với tư cách là: ${state.currentUser}\n`;
+    let confirmMsg = `Em đang nộp phiếu phản ánh nề nếp với tên: ${state.currentUser}\n`;
     if (selectedList.length > 0) {
-        confirmMsg += `• Số bạn được bình chọn: ${selectedList.length} bạn\n`;
+        confirmMsg += `• Số bạn phản ánh làm ồn: ${selectedList.length} bạn\n`;
     }
     if (feedback) {
-        confirmMsg += `• Có gửi kèm ý kiến đề xuất riêng\n`;
+        confirmMsg += `• Có kèm ý kiến phản ánh riêng cho GVCN\n`;
     }
-    confirmMsg += `\nBạn có chắc chắn muốn gửi phiếu này?`;
+    confirmMsg += `\nEm có chắc chắn muốn gửi phiếu này?`;
 
     if (!confirm(confirmMsg)) {
         return;
@@ -551,25 +610,32 @@ function saveLocalBackup(payload) {
         const history = JSON.parse(localStorage.getItem('vote_history') || '[]');
         history.push(payload);
         localStorage.setItem('vote_history', JSON.stringify(history));
+
+        // Lưu danh sách bạn đã nộp trên thiết bị này để ngăn nộp lại
+        const votedList = JSON.parse(localStorage.getItem('voted_students') || '[]');
+        if (!votedList.includes(payload.voter)) {
+            votedList.push(payload.voter);
+            localStorage.setItem('voted_students', JSON.stringify(votedList));
+        }
     } catch (e) {}
 }
 
 function showSuccessScreen(payload) {
-    elements.successSummary.textContent = `Hệ thống đã ghi nhận phiếu của bạn (${payload.voter})!`;
+    elements.successSummary.textContent = `Hệ thống đã ghi nhận phiếu phản ánh của em (${payload.voter})!`;
 
     let html = `
         <div class="receipt-item">
             <b>Người gửi:</b> <span>${payload.voter}</span>
         </div>
         <div class="receipt-item">
-            <b>Đã bầu cho:</b> <span>${payload.selected.length > 0 ? payload.selected.join(', ') : '<i>(Không chọn ai)</i>'}</span>
+            <b>Các bạn làm ồn đã chọn:</b> <span>${payload.selected.length > 0 ? payload.selected.join(', ') : '<i>(Không chọn ai)</i>'}</span>
         </div>
     `;
 
     if (payload.feedback) {
         html += `
             <div class="receipt-item">
-                <b>Lời nhắn/Góp ý:</b> <span>${payload.feedback}</span>
+                <b>Lời nhắn / Đề xuất riêng:</b> <span>${payload.feedback}</span>
             </div>
         `;
     }
