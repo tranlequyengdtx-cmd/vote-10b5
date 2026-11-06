@@ -24,7 +24,7 @@ const POLL_CONFIG = {
     submitButtonText: "XÁC NHẬN NỘP PHIẾU PHẢN ÁNH",
 
     // Thời gian cập nhật
-    updatedAt: "2026-11-06 21:58"
+    updatedAt: "2026-11-06 22:16"
 };
 
 // Xuất ra môi trường Node.js (nếu dùng kiểm thử)

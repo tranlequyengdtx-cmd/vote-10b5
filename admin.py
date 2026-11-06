@@ -16,6 +16,7 @@ import subprocess
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(SCRIPT_DIR, "poll_config.js")
+INDEX_FILE = os.path.join(SCRIPT_DIR, "index.html")
 
 IS_TTY = sys.stdout.isatty()
 
@@ -116,6 +117,41 @@ if (typeof module !== 'undefined' && module.exports) {{
     with open(CONFIG_FILE, "w", encoding="utf-8") as f:
         f.write(js_content)
     print(c_green(f"✅ Đã lưu cấu hình vào: {CONFIG_FILE}"))
+
+    # Đồng bộ trực tiếp vào index.html để hiển thị tức thì và phá cache trình duyệt
+    sync_index_html(config)
+
+
+def sync_index_html(config):
+    """Đồng bộ trực tiếp tiêu đề, câu hỏi và cache-busting vào index.html"""
+    if not os.path.exists(INDEX_FILE):
+        return
+    try:
+        with open(INDEX_FILE, "r", encoding="utf-8") as f:
+            html = f.read()
+
+        title = config.get("appTitle", "")
+        prompt = config.get("promptTitle", "")
+        now_ts = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+
+        # Cập nhật <title> và <h1 id="app-title">
+        if title:
+            html = re.sub(r"<title>.*?</title>", f"<title>{title} - Lớp 10B5</title>", html)
+            html = re.sub(r'<h1 id="app-title">.*?</h1>', f'<h1 id="app-title">{title}</h1>', html)
+
+        # Cập nhật <h2 id="prompt-title">
+        if prompt:
+            html = re.sub(r'<h2 id="prompt-title">.*?</h2>', f'<h2 id="prompt-title">{prompt}</h2>', html)
+
+        # Cache busting timestamp cho các file script để ép trình duyệt luôn tải file mới nhất
+        html = re.sub(r'src="poll_config\.js(\?v=[^"]*)?"', f'src="poll_config.js?v={now_ts}"', html)
+        html = re.sub(r'src="app\.js(\?v=[^"]*)?"', f'src="app.js?v={now_ts}"', html)
+
+        with open(INDEX_FILE, "w", encoding="utf-8") as f:
+            f.write(html)
+        print(c_green(f"✅ Đã đồng bộ trực tiếp tiêu đề mới & chống cache vào: {INDEX_FILE}"))
+    except Exception as e:
+        print(c_yellow(f"⚠️ Không thể đồng bộ index.html: {e}"))
 
 
 def generate_default_round_id():
