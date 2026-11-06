@@ -78,3 +78,35 @@ Mỗi khi học sinh trong lớp bấm nộp phiếu:
   - Xem ngay ai đứng **Hạng 1, Hạng 2, Hạng 3** với bao nhiêu phiếu.
   - Xem ngay bạn nào chưa nộp phiếu để nhắc nhở.
   - Đọc toàn bộ ý kiến, đề xuất của học sinh ở trang tính `NHAT_KY_VA_GOP_Y`.
+
+---
+
+## 🛠️ Hướng Dẫn Sử Dụng CLI Quản Trị (`admin.py`)
+
+Thầy có thể can thiệp tiêu đề app, lời nhắc câu hỏi và reset đợt mới bằng công cụ CLI:
+
+### 1. Mở Menu tương tác trực quan:
+```bash
+python3 admin.py
+```
+Menu sẽ hiển thị các phím tắt chọn nhanh:
+- `[1]`: Bắt đầu đợt mới (tự động mở khóa cho học sinh cả lớp).
+- `[2]`: Chỉnh sửa tiêu đề App hoặc lời nhắc khảo sát.
+- `[3]`: Xem cấu hình hiện tại.
+- `[4]`: Đẩy ngay lên GitHub Pages.
+
+### 2. Các lệnh tắt nhanh qua Terminal:
+```bash
+# Xem thông tin đợt hiện tại:
+python3 admin.py --status
+
+# Tạo đợt mới (mở khóa ngay cho học sinh):
+python3 admin.py --new-round
+
+# Đổi tiêu đề và câu hỏi bằng 1 lệnh:
+python3 admin.py --title "Khảo Sát Nề Nếp Tuần Mới" --prompt "Chọn bạn vi phạm nề nếp tuần này"
+
+# Tự động push cấu hình lên GitHub Pages:
+python3 admin.py --push
+```
+

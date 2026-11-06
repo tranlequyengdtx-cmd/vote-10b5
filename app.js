@@ -60,7 +60,55 @@ const elements = {
 // ==============================================================================
 // KHỞI TẠO & HỖ TRỢ GIAO DIỆN
 // ==============================================================================
+function getCurrentRoundId() {
+    return (window.POLL_CONFIG && window.POLL_CONFIG.roundId) ? window.POLL_CONFIG.roundId : 'default_round';
+}
+
+function getVotedStorageKey() {
+    return 'voted_students_' + getCurrentRoundId();
+}
+
+function applyPollConfig() {
+    if (!window.POLL_CONFIG) return;
+    const cfg = window.POLL_CONFIG;
+    
+    if (cfg.appTitle) {
+        const el = document.getElementById('app-title');
+        if (el) el.textContent = cfg.appTitle;
+        document.title = cfg.appTitle + " - Lớp 10B5";
+    }
+    if (cfg.appSubtitle) {
+        const el = document.getElementById('app-subtitle');
+        if (el) el.textContent = cfg.appSubtitle;
+    }
+    if (cfg.promptTitle) {
+        const el = document.getElementById('prompt-title');
+        if (el) el.textContent = cfg.promptTitle;
+    }
+    if (cfg.promptDesc) {
+        const el = document.getElementById('prompt-desc');
+        if (el) el.textContent = cfg.promptDesc;
+    }
+    if (cfg.feedbackTitle) {
+        const el = document.getElementById('feedback-title');
+        if (el) el.textContent = cfg.feedbackTitle;
+    }
+    if (cfg.feedbackDesc) {
+        const el = document.getElementById('feedback-desc');
+        if (el) el.textContent = cfg.feedbackDesc;
+    }
+    if (cfg.feedbackPlaceholder) {
+        const el = document.getElementById('feedback-input');
+        if (el) el.placeholder = cfg.feedbackPlaceholder;
+    }
+    if (cfg.submitButtonText) {
+        const el = document.getElementById('submit-btn-text');
+        if (el) el.textContent = cfg.submitButtonText;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    applyPollConfig();
     initTheme();
     setupEventListeners();
     renderModalStudentsList();
@@ -261,10 +309,11 @@ async function verifyPinAndLogin() {
     if (validHashes.includes(currentHash)) {
         hidePinError();
 
-        // 1. Kiểm tra nhanh trong bộ nhớ thiết bị (Local Storage)
-        const votedList = JSON.parse(localStorage.getItem('voted_students') || '[]');
+        // 1. Kiểm tra nhanh trong bộ nhớ thiết bị theo Đợt hiện tại (roundId)
+        const storageKey = getVotedStorageKey();
+        const votedList = JSON.parse(localStorage.getItem(storageKey) || '[]');
         if (votedList.includes(name)) {
-            alert(`⚠️ Bạn "${name}" đã nộp phiếu bình chọn rồi!\nTheo quy định, mỗi học sinh chỉ được gửi 1 lần duy nhất.`);
+            alert(`⚠️ Bạn "${name}" đã nộp phiếu ở đợt này rồi!\nTheo quy định, mỗi học sinh chỉ được gửi 1 lần duy nhất trong mỗi đợt.`);
             return;
         }
 
@@ -294,7 +343,7 @@ async function checkOnlineStatusAndProceed(name) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout để tránh gián đoạn nếu mạng chậm
 
-        const resp = await fetch(`${GOOGLE_SCRIPT_URL}?action=check&voter=${encodeURIComponent(name)}`, {
+        const resp = await fetch(`${GOOGLE_SCRIPT_URL}?action=check&voter=${encodeURIComponent(name)}&round=${encodeURIComponent(getCurrentRoundId())}`, {
             signal: controller.signal
         });
         clearTimeout(timeoutId);
@@ -313,13 +362,14 @@ async function checkOnlineStatusAndProceed(name) {
     }
 
     if (hasVotedOnline) {
-        // Lưu vào Local Storage để lần sau không cần query lại
-        const votedList = JSON.parse(localStorage.getItem('voted_students') || '[]');
+        // Lưu vào Local Storage theo đợt hiện tại
+        const storageKey = getVotedStorageKey();
+        const votedList = JSON.parse(localStorage.getItem(storageKey) || '[]');
         if (!votedList.includes(name)) {
             votedList.push(name);
-            localStorage.setItem('voted_students', JSON.stringify(votedList));
+            localStorage.setItem(storageKey, JSON.stringify(votedList));
         }
-        alert(`⚠️ Bạn "${name}" đã nộp phiếu bình chọn trước đó trên hệ thống!\nTheo quy định, mỗi học sinh chỉ được gửi phiếu một lần duy nhất.`);
+        alert(`⚠️ Bạn "${name}" đã nộp phiếu ở đợt này thành công trước đó trên hệ thống!\nTheo quy định, mỗi học sinh chỉ được gửi 1 lần duy nhất trong mỗi đợt.`);
         return;
     }
 
@@ -572,6 +622,7 @@ async function handleVoteSubmit() {
         voter: state.currentUser,
         selected: selectedList,
         feedback: feedback,
+        roundId: getCurrentRoundId(),
         timestamp: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
     };
 
@@ -611,11 +662,12 @@ function saveLocalBackup(payload) {
         history.push(payload);
         localStorage.setItem('vote_history', JSON.stringify(history));
 
-        // Lưu danh sách bạn đã nộp trên thiết bị này để ngăn nộp lại
-        const votedList = JSON.parse(localStorage.getItem('voted_students') || '[]');
+        // Lưu danh sách bạn đã nộp theo ĐỢT HIỆN TẠI (roundId) trên thiết bị này
+        const storageKey = getVotedStorageKey();
+        const votedList = JSON.parse(localStorage.getItem(storageKey) || '[]');
         if (!votedList.includes(payload.voter)) {
             votedList.push(payload.voter);
-            localStorage.setItem('voted_students', JSON.stringify(votedList));
+            localStorage.setItem(storageKey, JSON.stringify(votedList));
         }
     } catch (e) {}
 }

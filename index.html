@@ -24,8 +24,8 @@
                     <i data-lucide="bell-ring"></i>
                     <span>LỚP 10B5</span>
                 </div>
-                <h1>Khảo Sát Nề Nếp Cuối Tuần</h1>
-                <p class="subtitle">Ghi nhận tình trạng làm ồn trong lớp • Bảo mật & Khách quan</p>
+                <h1 id="app-title">Khảo Sát Nề Nếp Cuối Tuần</h1>
+                <p id="app-subtitle" class="subtitle">Ghi nhận tình trạng làm ồn trong lớp • Bảo mật & Khách quan</p>
             </header>
 
             <main class="login-main">
@@ -104,8 +104,8 @@
                         <span>Đổi tên</span>
                     </button>
                 </div>
-                <h2>Để xây dựng môi trường học tập tập trung, em hãy chọn các bạn thường xuyên làm ồn / mất trật tự trong tuần để GVCN có biện pháp uốn nắn kịp thời</h2>
-                <p class="section-desc">Bấm chọn vào tên của các bạn vi phạm nề nếp (có thể chọn nhiều bạn).</p>
+                <h2 id="prompt-title">Để xây dựng môi trường học tập tập trung, em hãy chọn các bạn thường xuyên làm ồn / mất trật tự trong tuần để GVCN có biện pháp uốn nắn kịp thời</h2>
+                <p id="prompt-desc" class="section-desc">Bấm chọn vào tên của các bạn vi phạm nề nếp (có thể chọn nhiều bạn).</p>
             </header>
 
             <main class="vote-main">
@@ -131,9 +131,9 @@
                 <div class="feedback-section">
                     <div class="section-title">
                         <i data-lucide="message-square"></i>
-                        <h3>Ý Kiến Phản Ánh / Đề Xuất Cho GVCN (Tùy chọn)</h3>
+                        <h3 id="feedback-title">Ý Kiến Phản Ánh / Đề Xuất Cho GVCN (Tùy chọn)</h3>
                     </div>
-                    <p class="section-desc">Em có phản ánh cụ thể về giờ học nào hoặc đề xuất biện pháp chấn chỉnh nề nếp cho Thầy không?</p>
+                    <p id="feedback-desc" class="section-desc">Em có phản ánh cụ thể về giờ học nào hoặc đề xuất biện pháp chấn chỉnh nề nếp cho Thầy không?</p>
                     <textarea 
                         id="feedback-input" 
                         rows="3" 
@@ -145,7 +145,7 @@
                 <div class="submit-bar">
                     <button id="submit-vote-btn" class="primary-btn btn-block">
                         <i data-lucide="send"></i>
-                        <span>XÁC NHẬN NỘP PHIẾU PHẢN ÁNH</span>
+                        <span id="submit-btn-text">XÁC NHẬN NỘP PHIẾU PHẢN ÁNH</span>
                     </button>
                 </div>
             </main>
@@ -199,7 +199,8 @@
     </div>
 
     <!-- Scripts -->
+    <script src="poll_config.js?v=1"></script>
     <script src="students.js?v=3"></script>
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=4"></script>
 </body>
 </html>

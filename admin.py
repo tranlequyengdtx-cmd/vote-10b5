@@ -1,305 +1,316 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Admin CLI Utility for Class Voting App
-Quản lý tiêu chí, tra cứu kết quả bình chọn và xem phản hồi học sinh.
+Class Voting App - Admin CLI Management Tool
+Quản trị đợt bình chọn, tiêu đề và nề nếp lớp 10B5 qua dòng lệnh.
+Hỗ trợ can thiệp nhanh, tự động reset khóa đợt cho học sinh và đồng bộ GitHub Pages.
 """
 
 import os
+import re
 import sys
-import sqlite3
+import json
 import argparse
 import datetime
-import shutil
+import subprocess
 
-DB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "votes.db")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_FILE = os.path.join(SCRIPT_DIR, "poll_config.js")
 
 IS_TTY = sys.stdout.isatty()
 
-# ANSI Color helpers
-def c_bold(text):
-    return f"\033[1m{text}\033[0m" if IS_TTY else str(text)
-
-def c_blue(text):
-    return f"\033[1;34m{text}\033[0m" if IS_TTY else str(text)
-
-def c_green(text):
-    return f"\033[1;32m{text}\033[0m" if IS_TTY else str(text)
-
-def c_yellow(text):
-    return f"\033[1;33m{text}\033[0m" if IS_TTY else str(text)
-
-def c_red(text):
-    return f"\033[1;31m{text}\033[0m" if IS_TTY else str(text)
-
-def c_cyan(text):
-    return f"\033[1;36m{text}\033[0m" if IS_TTY else str(text)
+# Helper màu sắc terminal
+def c_bold(s): return f"\033[1m{s}\033[0m" if IS_TTY else str(s)
+def c_green(s): return f"\033[1;32m{s}\033[0m" if IS_TTY else str(s)
+def c_cyan(s): return f"\033[1;36m{s}\033[0m" if IS_TTY else str(s)
+def c_yellow(s): return f"\033[1;33m{s}\033[0m" if IS_TTY else str(s)
+def c_red(s): return f"\033[1;31m{s}\033[0m" if IS_TTY else str(s)
+def c_magenta(s): return f"\033[1;35m{s}\033[0m" if IS_TTY else str(s)
 
 
-def get_db():
-    conn = sqlite3.connect(DB_FILE)
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+def load_config():
+    """Đọc cấu hình từ poll_config.js"""
+    if not os.path.exists(CONFIG_FILE):
+        return {
+            "roundId": generate_default_round_id(),
+            "appTitle": "Khảo Sát Nề Nếp Cuối Tuần",
+            "appSubtitle": "Ghi nhận tình trạng làm ồn trong lớp • Bảo mật & Khách quan",
+            "promptTitle": "Để xây dựng môi trường học tập tập trung, em hãy chọn các bạn thường xuyên làm ồn / mất trật tự trong tuần để GVCN có biện pháp uốn nắn kịp thời",
+            "promptDesc": "Bấm chọn vào tên của các bạn vi phạm nề nếp (có thể chọn nhiều bạn).",
+            "feedbackTitle": "Ý Kiến Phản Ánh / Đề Xuất Cho GVCN (Tùy chọn)",
+            "feedbackDesc": "Em có phản ánh cụ thể về giờ học nào hoặc đề xuất biện pháp chấn chỉnh nề nếp cho Thầy không?",
+            "feedbackPlaceholder": "Nhập nội dung phản ánh hoặc đề xuất riêng tại đây (nếu có)...",
+            "submitButtonText": "XÁC NHẬN NỘP PHIẾU PHẢN ÁNH",
+            "updatedAt": datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        }
+
+    try:
+        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # Trích xuất đối tượng JSON từ const POLL_CONFIG = { ... };
+        match = re.search(r"const\s+POLL_CONFIG\s*=\s*(\{[\s\S]*?\});", content)
+        if match:
+            # Chuyển đổi cú pháp JS object sang json chuẩn
+            json_str = match.group(1)
+            # Thay thế các comment dòng // nếu có
+            json_str = re.sub(r"//.*?\n", "\n", json_str)
+            # Thêm dấu ngoặc kép cho keys
+            json_str = re.sub(r'(\w+)\s*:', r'"\1":', json_str)
+            # Bỏ dấu phẩy cuối dòng trước ngoặc đóng
+            json_str = re.sub(r',\s*\}', '}', json_str)
+            return json.loads(json_str)
+    except Exception:
+        pass
+
+    # Fallback regex thủ công an toàn nếu JSON parse gặp lỗi
+    config = {}
+    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        text = f.read()
+    for key in ["roundId", "appTitle", "appSubtitle", "promptTitle", "promptDesc",
+                "feedbackTitle", "feedbackDesc", "feedbackPlaceholder", "submitButtonText", "updatedAt"]:
+        m = re.search(rf'{key}\s*:\s*["\'](.*?)["\']', text)
+        if m:
+            config[key] = m.group(1)
+    return config
 
 
-def init_db():
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                student_name TEXT PRIMARY KEY,
-                password_hash TEXT,
-                created INTEGER
-            )
-        """)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS criteria (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL
-            )
-        """)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS votes (
-                voter TEXT NOT NULL,
-                target TEXT NOT NULL,
-                criteria_id INTEGER NOT NULL,
-                UNIQUE(voter, target, criteria_id)
-            )
-        """)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS feedback (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                student_name TEXT NOT NULL,
-                content TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        conn.commit()
+def save_config(config):
+    """Ghi cấu hình ra file poll_config.js"""
+    config["updatedAt"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    
+    js_content = f"""// ==============================================================================
+// CẤU HÌNH ĐỢT BÌNH CHỌN & TIÊU ĐỀ ỨNG DỤNG LỚP 10B5
+// File này được quản lý tự động bởi CLI (admin.py) hoặc có thể sửa trực tiếp.
+// ==============================================================================
+const POLL_CONFIG = {{
+    // Mã đợt bình chọn. Khi thay đổi mã này, học sinh cả lớp sẽ được mở khóa
+    // để bình chọn đợt mới mà không bị chặn bởi bộ nhớ trình duyệt cũ.
+    roundId: "{config.get('roundId', '')}",
+
+    // Tiêu đề và mô tả ở Màn hình 1 (Đăng nhập)
+    appTitle: "{config.get('appTitle', '')}",
+    appSubtitle: "{config.get('appSubtitle', '')}",
+
+    // Lời nhắc và hướng dẫn ở Màn hình 2 (Bình chọn)
+    promptTitle: "{config.get('promptTitle', '')}",
+    promptDesc: "{config.get('promptDesc', '')}",
+
+    // Tiêu đề & mô tả phần phản ánh riêng
+    feedbackTitle: "{config.get('feedbackTitle', '')}",
+    feedbackDesc: "{config.get('feedbackDesc', '')}",
+    feedbackPlaceholder: "{config.get('feedbackPlaceholder', '')}",
+
+    // Chữ hiển thị trên nút nộp
+    submitButtonText: "{config.get('submitButtonText', '')}",
+
+    // Thời gian cập nhật
+    updatedAt: "{config.get('updatedAt', '')}"
+}};
+
+// Xuất ra môi trường Node.js (nếu dùng kiểm thử)
+if (typeof module !== 'undefined' && module.exports) {{
+    module.exports = POLL_CONFIG;
+}}
+"""
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        f.write(js_content)
+    print(c_green(f"✅ Đã lưu cấu hình vào: {CONFIG_FILE}"))
 
 
-def add_criterion(title):
-    title = title.strip()
-    if not title:
-        print(c_red("❌ Tiêu chí không được để trống!"))
-        return
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO criteria (title) VALUES (?)", (title,))
-        conn.commit()
-        new_id = cursor.lastrowid
-        print(c_green(f"✅ Đã thêm tiêu chí mới [ID: {new_id}]: ") + c_bold(title))
+def generate_default_round_id():
+    """Tự động sinh mã đợt mới theo Tuần và Năm hiện tại"""
+    now = datetime.datetime.now()
+    week_num = now.isocalendar()[1]
+    return f"Tuan_{week_num}_{now.year}_{now.strftime('%d%m')}"
 
 
-def list_criteria():
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, title FROM criteria ORDER BY id ASC")
-        rows = cursor.fetchall()
-        if not rows:
-            print(c_yellow("⚠️ Chưa có tiêu chí bình chọn nào trong hệ thống."))
-            print("Dùng: python admin.py --add-crit \"<Tên tiêu chí>\" để tạo mới.")
+def print_status(config=None):
+    """In trạng thái cấu hình hiện tại"""
+    if config is None:
+        config = load_config()
+
+    print("\n" + c_cyan("═" * 68))
+    print(c_bold(" 📊 TRẠNG THÁI CẤU HÌNH ĐỢT BÌNH CHỌN HIỆN TẠI (LỚP 10B5)"))
+    print(c_cyan("═" * 68))
+    print(f" • {c_bold('Mã Đợt (Round ID)'):<26}: {c_green(config.get('roundId', 'Chưa đặt'))}")
+    print(f" • {c_bold('Cập nhật lần cuối'):<26}: {config.get('updatedAt', 'N/A')}")
+    print(f" • {c_bold('Tiêu đề App'):<26}: {c_yellow(config.get('appTitle', ''))}")
+    print(f" • {c_bold('Phụ đề App'):<26}: {config.get('appSubtitle', '')}")
+    print(f" • {c_bold('Lời nhắc câu hỏi'):<26}: {c_magenta(config.get('promptTitle', ''))}")
+    print(f" • {c_bold('Mục ý kiến riêng'):<26}: {config.get('feedbackTitle', '')}")
+    print(c_cyan("─" * 68))
+    print(f" 💡 {c_bold('Cơ chế mở khóa:')} Học sinh trên mọi thiết bị được phân biệt theo")
+    print(f"    mã đợt '{config.get('roundId')}'. Khi tạo đợt mới, toàn bộ lớp sẽ")
+    print("    tự động được mở khóa nộp phiếu!")
+    print(c_cyan("═" * 68) + "\n")
+
+
+def git_push_auto():
+    """Hỏi và tự động commit/push lên GitHub Pages"""
+    try:
+        res = subprocess.run(["git", "status", "-s"], cwd=SCRIPT_DIR, capture_output=True, text=True)
+        if not res.stdout.strip():
+            print(c_yellow("ℹ️ Không có thay đổi nào cần push lên GitHub."))
             return
 
-        print(c_cyan("\n📋 DANH SÁCH TIÊU CHÍ BÌNH CHỌN:"))
-        print("─" * 60)
-        print(f" {'ID':<6} │ {'Tên tiêu chí'}")
-        print("─" * 60)
-        for cid, title in rows:
-            print(f" {c_bold(str(cid)):<6} │ {title}")
-        print("─" * 60 + "\n")
+        print(c_yellow("\n📦 Có thay đổi cấu hình cần đẩy lên GitHub Pages:"))
+        for line in res.stdout.strip().split("\n"):
+            print(f"   {line}")
+
+        ans = input(c_bold("\nThầy có muốn commit và push ngay lên GitHub Pages không? [Y/n]: ")).strip().lower()
+        if ans in ["", "y", "yes"]:
+            print("🚀 Đang đẩy dữ liệu lên GitHub...")
+            subprocess.run(["git", "add", "."], cwd=SCRIPT_DIR, check=True)
+            msg = f"Cập nhật đợt bình chọn: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}"
+            subprocess.run(["git", "commit", "-m", msg], cwd=SCRIPT_DIR, check=True)
+            subprocess.run(["git", "push", "origin", "main"], cwd=SCRIPT_DIR, check=True)
+            print(c_green("🎉 ĐÃ PUSH THÀNH CÔNG LÊN GITHUB!"))
+            print(c_cyan("👉 GitHub Pages sẽ cập nhật sau khoảng 30 giây."))
+        else:
+            print(c_yellow("Đã hủy push. Thầy có thể push thủ công sau bằng lệnh: python admin.py --push"))
+    except Exception as e:
+        print(c_red(f"❌ Lỗi khi push git: {e}"))
 
 
-def del_criterion(crit_id):
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT title FROM criteria WHERE id = ?", (crit_id,))
-        row = cursor.fetchone()
-        if not row:
-            print(c_red(f"❌ Không tìm thấy tiêu chí với ID {crit_id}."))
-            return
-        title = row[0]
-        cursor.execute("DELETE FROM votes WHERE criteria_id = ?", (crit_id,))
-        cursor.execute("DELETE FROM criteria WHERE id = ?", (crit_id,))
-        conn.commit()
-        print(c_green(f"✅ Đã xóa tiêu chí [{crit_id}] '{title}' và toàn bộ phiếu bình chọn liên quan."))
+def interactive_menu():
+    """Giao diện menu tương tác dòng lệnh"""
+    while True:
+        config = load_config()
+        print("\n" + c_blue("╔" + "═" * 66 + "╗"))
+        print(c_blue("║") + c_bold(" 🛠️  HỆ THỐNG QUẢN TRỊ BÌNH CHỌN & NỀ NẾP LỚP 10B5 (CLI)       ") + c_blue("║"))
+        print(c_blue("╚" + "═" * 66 + "╝"))
+        print(f" Đợt hiện tại: {c_green(config.get('roundId', ''))} | Cập nhật: {config.get('updatedAt', '')}")
+        print(f" Tiêu đề     : {c_yellow(config.get('appTitle', ''))}")
+        print("─" * 68)
+        print(f" {c_bold('[1]')} 🔄 Bắt đầu ĐỢT BÌNH CHỌN MỚI (Tự động mở khóa cả lớp)")
+        print(f" {c_bold('[2]')} ✏️  Chỉnh sửa Tiêu đề App & Lời nhắc câu hỏi")
+        print(f" {c_bold('[3]')} 📊 Xem chi tiết cấu hình hiện tại")
+        print(f" {c_bold('[4]')} 🚀 Đẩy ngay cấu hình lên GitHub Pages (Git push)")
+        print(f" {c_bold('[0]')} ❌ Thoát")
+        print("─" * 68)
 
+        choice = input(c_bold("Chọn chức năng (0-4): ")).strip()
 
-def show_top_voted(n):
-    if n <= 0:
-        n = 5
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, title FROM criteria ORDER BY id ASC")
-        criteria_list = cursor.fetchall()
+        if choice == "1":
+            default_round = generate_default_round_id()
+            print(f"\n🔄 {c_bold('BẮT ĐẦU ĐỢT BÌNH CHỌN MỚI')}")
+            print(f"Gợi ý mã đợt mới: {c_green(default_round)}")
+            new_round = input(f"Nhập mã đợt mới (Bấm Enter để dùng '{default_round}'): ").strip()
+            if not new_round:
+                new_round = default_round
 
-        if not criteria_list:
-            print(c_yellow("⚠️ Chưa có tiêu chí bình chọn nào."))
-            return
+            print(f"\nTiêu đề app hiện tại: {c_yellow(config.get('appTitle', ''))}")
+            new_title = input("Tiêu đề mới (Bấm Enter để giữ nguyên): ").strip()
 
-        term_width = max(60, min(shutil.get_terminal_size().columns, 90))
+            print(f"\nLời nhắc hiện tại: {c_magenta(config.get('promptTitle', ''))}")
+            new_prompt = input("Lời nhắc mới (Bấm Enter để giữ nguyên): ").strip()
 
-        print(c_blue("\n" + "═" * term_width))
-        print(c_bold(f" 🏆 BẢNG XẾP HẠNG TOP {n} HỌC SINH ĐƯỢC BÌNH CHỌN CAO NHẤT"))
-        print(c_blue("═" * term_width))
+            config["roundId"] = new_round
+            if new_title:
+                config["appTitle"] = new_title
+            if new_prompt:
+                config["promptTitle"] = new_prompt
 
-        for cid, title in criteria_list:
-            print(f"\n📌 {c_cyan('Tiêu chí [ID ' + str(cid) + ']:')} {c_bold(title)}")
-            
-            # Query vote counts
-            cursor.execute("""
-                SELECT target, COUNT(*) as vote_count
-                FROM votes
-                WHERE criteria_id = ?
-                GROUP BY target
-                ORDER BY vote_count DESC, target ASC
-                LIMIT ?
-            """, (cid, n))
-            rankings = cursor.fetchall()
+            save_config(config)
+            print(c_green(f"\n🎉 ĐÃ KHỞI TẠO ĐỢT MỚI THÀNH CÔNG: {new_round}"))
+            print(c_cyan("👉 Học sinh cả lớp đã được mở khóa tự động trên điện thoại!"))
+            git_push_auto()
 
-            if not rankings:
-                print(f"   {c_yellow('(Chưa có lượt bình chọn nào cho tiêu chí này)')}")
-                continue
+        elif choice == "2":
+            print(f"\n✏️  {c_bold('CHỈNH SỬA TIÊU ĐỀ & LỜI NHẮC (GIỮ NGUYÊN ĐỢT HIỆN TẠI)')}")
+            print(f"1. Tiêu đề App hiện tại: {c_yellow(config.get('appTitle', ''))}")
+            new_title = input("   Nhập tiêu đề mới (Enter để giữ nguyên): ").strip()
+            if new_title:
+                config["appTitle"] = new_title
 
-            print("   ┌──────┬──────────────────────────────┬────────────┐")
-            print("   │ Hạng │ Họ và Tên                    │ Số phiếu   │")
-            print("   ├──────┼──────────────────────────────┼────────────┤")
-            for rank, (target, count) in enumerate(rankings, 1):
-                medal = "🥇" if rank == 1 else ("🥈" if rank == 2 else ("🥉" if rank == 3 else f" {rank} "))
-                print(f"   │ {medal:<4} │ {target:<28} │ {c_green(str(count) + ' phiếu'):<19} │")
-            print("   └──────┴──────────────────────────────┴────────────┘")
+            print(f"2. Phụ đề App hiện tại: {config.get('appSubtitle', '')}")
+            new_sub = input("   Nhập phụ đề mới (Enter để giữ nguyên): ").strip()
+            if new_sub:
+                config["appSubtitle"] = new_sub
 
-        print("\n" + c_blue("═" * term_width) + "\n")
+            print(f"3. Lời nhắc hiện tại: {c_magenta(config.get('promptTitle', ''))}")
+            new_prompt = input("   Nhập lời nhắc mới (Enter để giữ nguyên): ").strip()
+            if new_prompt:
+                config["promptTitle"] = new_prompt
 
+            print(f"4. Mô tả lời nhắc hiện tại: {config.get('promptDesc', '')}")
+            new_pdesc = input("   Nhập mô tả lời nhắc mới (Enter để giữ nguyên): ").strip()
+            if new_pdesc:
+                config["promptDesc"] = new_pdesc
 
-def show_feedback():
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT id, student_name, content, created_at
-            FROM feedback
-            ORDER BY id DESC
-        """)
-        feedbacks = cursor.fetchall()
+            save_config(config)
+            print(c_green("✅ Đã cập nhật tiêu đề & lời nhắc thành công!"))
+            git_push_auto()
 
-        if not feedbacks:
-            print(c_yellow("\n💬 Chưa có ý kiến đóng góp nào từ học sinh.\n"))
-            return
+        elif choice == "3":
+            print_status(config)
+            input(c_bold("Bấm Enter để quay lại menu..."))
 
-        term_width = max(60, min(shutil.get_terminal_size().columns, 90))
-        print(c_green("\n" + "═" * term_width))
-        print(c_bold(f" 💬 DANH SÁCH Ý KIẾN ĐÓNG GÓP TỪ HỌC SINH ({len(feedbacks)} ý kiến)"))
-        print(c_green("═" * term_width))
+        elif choice == "4":
+            git_push_auto()
+            input(c_bold("Bấm Enter để quay lại menu..."))
 
-        for fid, student_name, content, created_at in feedbacks:
-            # format created_at cleanly
-            time_str = str(created_at).split(".")[0] if created_at else ""
-            print(f"\n🔹 {c_bold(student_name)} {c_yellow('[' + time_str + ']')} (Mã #{fid}):")
-            for line in content.strip().splitlines():
-                print(f"   │ {line}")
-
-        print("\n" + c_green("═" * term_width) + "\n")
-
-
-def show_stats():
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM users")
-        active_users = cursor.fetchone()[0]
-
-        cursor.execute("SELECT COUNT(DISTINCT voter) FROM votes")
-        voted_users = cursor.fetchone()[0]
-
-        cursor.execute("SELECT COUNT(*) FROM votes")
-        total_votes = cursor.fetchone()[0]
-
-        cursor.execute("SELECT COUNT(*) FROM feedback")
-        total_feedback = cursor.fetchone()[0]
-
-        cursor.execute("SELECT COUNT(*) FROM criteria")
-        total_criteria = cursor.fetchone()[0]
-
-        # Load total students from students.json if available
-        students_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "students.json")
-        total_students = 0
-        if os.path.exists(students_file):
-            import json
-            try:
-                with open(students_file, "r", encoding="utf-8") as f:
-                    s_data = json.load(f)
-                    total_students = len(s_data)
-            except:
-                pass
-
-        print(c_cyan("\n📊 THỐNG KÊ TIẾN ĐỘ BÌNH CHỌN:"))
-        print("─" * 45)
-        print(f" • Tổng số học sinh trong lớp : {c_bold(str(total_students)) if total_students else 'Chưa rõ'}")
-        print(f" • Số học sinh đã tạo mã PIN  : {c_green(str(active_users))}")
-        print(f" • Số học sinh đã tham gia vote: {c_green(str(voted_users))}")
-        print(f" • Tổng số phiếu đã bầu       : {c_bold(str(total_votes))}")
-        print(f" • Số ý kiến đóng góp đã gửi  : {c_bold(str(total_feedback))}")
-        print(f" • Số tiêu chí đang mở        : {c_bold(str(total_criteria))}")
-        print("─" * 45 + "\n")
-
-
-def reset_password(student_name):
-    student_name = student_name.strip()
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT student_name FROM users WHERE LOWER(student_name) = LOWER(?)", (student_name,))
-        row = cursor.fetchone()
-        if not row:
-            print(c_yellow(f"⚠️ Học sinh '{student_name}' chưa từng đăng nhập hoặc không tồn tại trong hệ thống."))
-            return
-        actual_name = row[0]
-        cursor.execute("DELETE FROM users WHERE student_name = ?", (actual_name,))
-        conn.commit()
-        print(c_green(f"✅ Đã reset mã PIN cho học sinh: ") + c_bold(actual_name))
-        print("Học sinh này có thể tự đặt lại mã PIN mới trong lần đăng nhập tiếp theo.")
+        elif choice == "0":
+            print("Tạm biệt Thầy!")
+            break
+        else:
+            print(c_red("Lựa chọn không hợp lệ, vui lòng chọn từ 0 đến 4."))
 
 
 def main():
-    init_db()
-
     parser = argparse.ArgumentParser(
-        description="Admin CLI Utility cho ứng dụng Bình chọn Lớp học (Vote App)",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""Ví dụ sử dụng:
-  python admin.py --add-crit "Học sinh gương mẫu tháng 10"
-  python admin.py --list-crit
-  python admin.py --top 5
-  python admin.py --feedback
-  python admin.py --stats
-  python admin.py --reset-pass "Nguyễn Văn A"
-        """
+        description="Class Voting App - Admin CLI Utility (Quản lý đợt bình chọn & tiêu đề lớp 10B5)"
     )
-    parser.add_argument("--add-crit", type=str, metavar="TITLE", help="Thêm tiêu chí bình chọn mới")
-    parser.add_argument("--list-crit", action="store_true", help="Liệt kê tất cả các tiêu chí hiện có")
-    parser.add_argument("--del-crit", type=int, metavar="ID", help="Xóa tiêu chí theo ID kèm phiếu liên quan")
-    parser.add_argument("--top", type=int, nargs="?", const=5, metavar="N", help="Hiển thị Top N học sinh được vote nhiều nhất (mặc định: 5)")
-    parser.add_argument("--feedback", action="store_true", help="Xem tất cả ý kiến đóng góp của học sinh")
-    parser.add_argument("--stats", action="store_true", help="Xem tổng quan thống kê số liệu bình chọn")
-    parser.add_argument("--reset-pass", type=str, metavar="NAME", help="Reset mã PIN/mật khẩu cho một học sinh")
-
-    if len(sys.argv) == 1:
-        parser.print_help()
-        sys.exit(0)
+    parser.add_argument("--status", "-s", action="store_true", help="Hiển thị trạng thái cấu hình đợt hiện tại")
+    parser.add_argument("--new-round", "-n", nargs="?", const="", help="Bắt đầu đợt mới (mở khóa cả lớp). Tùy chọn truyền [MÃ_ĐỢT]")
+    parser.add_argument("--reset", "-r", action="store_true", help="Reset đợt mới ngay lập tức với mã tự động sinh")
+    parser.add_argument("--title", "-t", type=str, help="Cập nhật tiêu đề App")
+    parser.add_argument("--prompt", "-p", type=str, help="Cập nhật câu hỏi / lời nhắc bình chọn")
+    parser.add_argument("--push", action="store_true", help="Đẩy cấu hình mới lên GitHub Pages ngay")
+    parser.add_argument("--interactive", "-i", action="store_true", help="Mở menu tương tác đầy đủ")
 
     args = parser.parse_args()
 
-    if args.add_crit:
-        add_criterion(args.add_crit)
-    if args.del_crit is not None:
-        del_criterion(args.del_crit)
-    if args.list_crit:
-        list_criteria()
-    if args.top is not None:
-        show_top_voted(args.top)
-    if args.feedback:
-        show_feedback()
-    if args.stats:
-        show_stats()
-    if args.reset_pass:
-        reset_password(args.reset_pass)
+    # Nếu không có cờ lệnh nào được truyền, mở menu tương tác
+    if len(sys.argv) == 1 or args.interactive:
+        interactive_menu()
+        return
+
+    config = load_config()
+    changed = False
+
+    if args.status:
+        print_status(config)
+        return
+
+    # Bắt đầu đợt mới hoặc reset
+    if args.new_round is not None or args.reset:
+        if args.new_round:
+            new_id = args.new_round.strip()
+        else:
+            new_id = generate_default_round_id()
+        config["roundId"] = new_id
+        print(c_green(f"🔄 ĐÃ BẮT ĐẦU ĐỢT BÌNH CHỌN MỚI: {c_bold(new_id)}"))
+        print(c_cyan("👉 Học sinh cả lớp đã được mở khóa tự động trên mọi thiết bị!"))
+        changed = True
+
+    if args.title:
+        config["appTitle"] = args.title.strip()
+        print(c_green(f"✅ Đã đổi tiêu đề app thành: {config['appTitle']}"))
+        changed = True
+
+    if args.prompt:
+        config["promptTitle"] = args.prompt.strip()
+        print(c_green(f"✅ Đã đổi lời nhắc câu hỏi thành: {config['promptTitle']}"))
+        changed = True
+
+    if changed:
+        save_config(config)
+        print_status(config)
+
+    if args.push or changed:
+        git_push_auto()
 
 
 if __name__ == "__main__":
