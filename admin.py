@@ -34,7 +34,7 @@ def load_config():
         return {
             "roundId": generate_default_round_id(),
             "appTitle": "Khảo Sát Nề Nếp Cuối Tuần",
-            "appSubtitle": "Ghi nhận tình trạng làm ồn trong lớp • Bảo mật & Khách quan",
+            "appSubtitle": "Bảo mật & Khách quan",
             "promptTitle": "Để xây dựng môi trường học tập tập trung, em hãy chọn các bạn thường xuyên làm ồn / mất trật tự trong tuần để GVCN có biện pháp uốn nắn kịp thời",
             "promptDesc": "Bấm chọn vào tên của các bạn vi phạm nề nếp (có thể chọn nhiều bạn).",
             "feedbackTitle": "Ý Kiến Phản Ánh / Đề Xuất Cho GVCN (Tùy chọn)",
