@@ -5,14 +5,14 @@
 const POLL_CONFIG = {
     // Mã đợt bình chọn. Khi thay đổi mã này, học sinh cả lớp sẽ được mở khóa
     // để bình chọn đợt mới mà không bị chặn bởi bộ nhớ trình duyệt cũ.
-    roundId: "Tuan_45_2026_0611",
+    roundId: "Tuan_45_2026_0711",
 
     // Tiêu đề và mô tả ở Màn hình 1 (Đăng nhập)
-    appTitle: "Bình chọn Phó Trật Tự",
+    appTitle: "Bình chọn những bạn làm ồn trong giờ học -- Tuần 10",
     appSubtitle: "Ghi nhận tình trạng làm ồn trong lớp • Bảo mật & Khách quan",
 
     // Lời nhắc và hướng dẫn ở Màn hình 2 (Bình chọn)
-    promptTitle: "Chọn 1 hoặc 2,3  bạn mà em cho là có năng lực phù hợp với vị trí",
+    promptTitle: "Hãy lựa chọn trung thực và khác quan để xây dựng môi trường học tập nghiêm túc va fhieuej quả.",
     promptDesc: "Bấm chọn vào tên của các bạn vi phạm nề nếp (có thể chọn nhiều bạn).",
 
     // Tiêu đề & mô tả phần phản ánh riêng
@@ -24,7 +24,7 @@ const POLL_CONFIG = {
     submitButtonText: "XÁC NHẬN NỘP PHIẾU PHẢN ÁNH",
 
     // Thời gian cập nhật
-    updatedAt: "2026-11-06 22:16"
+    updatedAt: "2026-11-07 13:53"
 };
 
 // Xuất ra môi trường Node.js (nếu dùng kiểm thử)
