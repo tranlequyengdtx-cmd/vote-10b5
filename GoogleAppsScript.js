@@ -465,6 +465,30 @@ function doPost(e) {
     const dataRange = sheetDash.getRange(12, 1, 46, 7);
     const values = dataRange.getValues();
 
+    // TỰ ĐỘNG NHẬN DIỆN ĐỢT BÌNH CHỌN MỚI TỪ CLI/WEB APP
+    const scriptProps = PropertiesService.getScriptProperties();
+    const currentRound = scriptProps.getProperty("CURRENT_ROUND_ID") || "";
+    const incomingRound = (data.roundId || "").trim();
+
+    if (incomingRound && incomingRound !== currentRound) {
+      // Nếu phát hiện mã đợt mới từ Web/CLI, tự động sao lưu bảng cũ và reset điểm cho đợt mới
+      const timeStr = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "dd-MM_HHhmm");
+      try {
+        const backupDash = sheetDash.copyTo(ss);
+        backupDash.setName("LuuTru_" + (currentRound ? currentRound : "DotCu") + "_" + timeStr);
+      } catch (backupErr) {
+        // Bỏ qua nếu trùng tên sheet sao lưu
+      }
+
+      // Reset các cột C (Trạng thái), D (Điểm), E (Thời gian). GIỮ NGUYÊN CỘT F (Trọng số)
+      for (let i = 0; i < values.length; i++) {
+        values[i][2] = "⏳ CHƯA NỘP";
+        values[i][3] = 0;
+        values[i][4] = "";
+      }
+      scriptProps.setProperty("CURRENT_ROUND_ID", incomingRound);
+    }
+
     // 1. Tìm voter, kiểm tra xem đã nộp chưa, lấy trọng số (Cột F - index 5)
     let voterFound = false;
     let voterWeight = 1;
@@ -472,18 +496,21 @@ function doPost(e) {
       if (values[i][1] === voter) {
         voterFound = true;
 
-        // KIỂM TRA CHỐNG VOTE NHIỀU LẦN: Nếu đã nộp trước đó thì từ chối ngay lập tức
+        // KIỂM TRA CHỐNG VOTE NHIỀU LẦN: Nếu đã nộp trước đó trong cùng đợt thì từ chối ngay lập tức
         const currentStatus = String(values[i][2] || "");
         if (currentStatus.indexOf("Đã nộp") !== -1) {
           return ContentService.createTextOutput(JSON.stringify({
             status: "already_voted",
-            message: `Học sinh "${voter}" đã nộp phiếu bình chọn trước đó rồi! Mỗi bạn chỉ được gửi 1 lần.`
+            message: `Học sinh "${voter}" đã nộp phiếu bình chọn ở đợt này rồi! Mỗi bạn chỉ được gửi 1 lần.`
           })).setMimeType(ContentService.MimeType.JSON);
         }
 
         values[i][2] = "✅ Đã nộp phiếu";
         values[i][4] = timestamp;
-        const w = parseFloat(values[i][5]);
+        
+        // Đọc trọng số an toàn (hỗ trợ cả dấu phẩy 1,5 hoặc dấu chấm 1.5)
+        const rawWeight = String(values[i][5] || "").replace(',', '.').trim();
+        const w = parseFloat(rawWeight);
         if (!isNaN(w) && w > 0) {
           voterWeight = w;
         }
@@ -505,7 +532,7 @@ function doPost(e) {
     for (let targetName of selected) {
       for (let i = 0; i < values.length; i++) {
         if (values[i][1] === targetName) {
-          const currentPoints = parseFloat(values[i][3]) || 0;
+          const currentPoints = parseFloat(String(values[i][3] || 0).replace(',', '.')) || 0;
           values[i][3] = currentPoints + voterWeight;
           break;
         }
@@ -516,7 +543,7 @@ function doPost(e) {
     dataRange.setValues(values);
     SpreadsheetApp.flush();
 
-    return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Recorded successfully", weight: voterWeight }))
+    return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Recorded successfully", weight: voterWeight, roundId: incomingRound }))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
@@ -532,6 +559,7 @@ function doGet(e) {
   try {
     const action = e && e.parameter ? e.parameter.action : "";
     const voter = e && e.parameter ? (e.parameter.voter || "").trim() : "";
+    const reqRound = e && e.parameter ? (e.parameter.round || "").trim() : "";
 
     // Kiểm tra trạng thái nộp phiếu của 1 học sinh cụ thể
     if (action === "check" && voter) {
@@ -541,6 +569,19 @@ function doGet(e) {
       if (!sheetDash) {
         return ContentService.createTextOutput(JSON.stringify({ status: "success", voter: voter, hasVoted: false }))
           .setMimeType(ContentService.MimeType.JSON);
+      }
+
+      // Kiểm tra xem đợt yêu cầu có khác đợt hiện tại trên Sheet không
+      const scriptProps = PropertiesService.getScriptProperties();
+      const currentRound = scriptProps.getProperty("CURRENT_ROUND_ID") || "";
+      if (reqRound && currentRound && reqRound !== currentRound) {
+        // Đợt mới hoàn toàn -> chắc chắn học sinh chưa nộp cho đợt mới
+        return ContentService.createTextOutput(JSON.stringify({ 
+          status: "success", 
+          voter: voter, 
+          hasVoted: false,
+          isNewRound: true 
+        })).setMimeType(ContentService.MimeType.JSON);
       }
 
       const values = sheetDash.getRange(12, 1, 46, 3).getValues();

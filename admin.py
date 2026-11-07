@@ -154,11 +154,15 @@ def sync_index_html(config):
         print(c_yellow(f"⚠️ Không thể đồng bộ index.html: {e}"))
 
 
-def generate_default_round_id():
-    """Tự động sinh mã đợt mới theo Tuần và Năm hiện tại"""
+def generate_default_round_id(existing_id=""):
+    """Tự động sinh mã đợt mới kèm ngày tháng giờ phút để luôn đảm bảo tính duy nhất"""
     now = datetime.datetime.now()
     week_num = now.isocalendar()[1]
-    return f"Tuan_{week_num}_{now.year}_{now.strftime('%d%m')}"
+    candidate = f"Tuan_{week_num}_{now.year}_{now.strftime('%d%m_%H%M')}"
+    # Nếu trùng với mã hiện tại, thêm giây vào để đảm bảo khác biệt 100%
+    if candidate == existing_id:
+        candidate = f"Tuan_{week_num}_{now.year}_{now.strftime('%d%m_%H%M%S')}"
+    return candidate
 
 
 def print_status(config=None):
@@ -229,7 +233,7 @@ def interactive_menu():
         choice = input(c_bold("Chọn chức năng (0-4): ")).strip()
 
         if choice == "1":
-            default_round = generate_default_round_id()
+            default_round = generate_default_round_id(config.get("roundId", ""))
             print(f"\n🔄 {c_bold('BẮT ĐẦU ĐỢT BÌNH CHỌN MỚI')}")
             print(f"Gợi ý mã đợt mới: {c_green(default_round)}")
             new_round = input(f"Nhập mã đợt mới (Bấm Enter để dùng '{default_round}'): ").strip()
@@ -325,7 +329,7 @@ def main():
         if args.new_round:
             new_id = args.new_round.strip()
         else:
-            new_id = generate_default_round_id()
+            new_id = generate_default_round_id(config.get("roundId", ""))
         config["roundId"] = new_id
         print(c_green(f"🔄 ĐÃ BẮT ĐẦU ĐỢT BÌNH CHỌN MỚI: {c_bold(new_id)}"))
         print(c_cyan("👉 Học sinh cả lớp đã được mở khóa tự động trên mọi thiết bị!"))
