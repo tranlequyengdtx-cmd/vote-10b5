@@ -115,7 +115,46 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) {
         lucide.createIcons();
     }
+    // Tự động đồng bộ Tiêu đề & Mã đợt mới từ Google Sheet trong nền (nếu GVCN sửa trên Sheet)
+    fetchRemoteConfig();
 });
+
+// Đồng bộ cấu hình động từ Google Sheet (Chạy ngầm, không làm chậm giao diện)
+async function fetchRemoteConfig() {
+    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes('AKfycbw...')) return;
+    try {
+        const resp = await fetch(`${GOOGLE_SCRIPT_URL}?action=getConfig`, {
+            cache: 'no-cache'
+        });
+        if (resp.ok) {
+            const data = await resp.json();
+            if (data && data.status === 'success') {
+                let updated = false;
+                if (data.appTitle && (!window.POLL_CONFIG || data.appTitle !== window.POLL_CONFIG.appTitle)) {
+                    window.POLL_CONFIG = window.POLL_CONFIG || {};
+                    window.POLL_CONFIG.appTitle = data.appTitle;
+                    updated = true;
+                }
+                if (data.promptTitle && (!window.POLL_CONFIG || data.promptTitle !== window.POLL_CONFIG.promptTitle)) {
+                    window.POLL_CONFIG = window.POLL_CONFIG || {};
+                    window.POLL_CONFIG.promptTitle = data.promptTitle;
+                    updated = true;
+                }
+                if (data.roundId && (!window.POLL_CONFIG || data.roundId !== window.POLL_CONFIG.roundId)) {
+                    console.log("Phát hiện đợt mới từ Google Sheet:", data.roundId);
+                    window.POLL_CONFIG = window.POLL_CONFIG || {};
+                    window.POLL_CONFIG.roundId = data.roundId;
+                    updated = true;
+                }
+                if (updated) {
+                    applyPollConfig();
+                }
+            }
+        }
+    } catch (e) {
+        // Nếu offline, giữ nguyên cấu hình tĩnh poll_config.js
+    }
+}
 
 // Chuyển màn hình
 function showScreen(screenName) {
@@ -317,8 +356,9 @@ async function verifyPinAndLogin() {
             return;
         }
 
-        // 2. Kiểm tra trực tuyến trên Google Sheets Dashboard
-        checkOnlineStatusAndProceed(name);
+        // 2. Vào thẳng màn hình bình chọn NGAY TỨC THÌ (0.1 giây, siêu mượt)
+        // Việc chống gian lận được chốt chặn an toàn ở bước bấm 'Nộp phiếu' (Google Sheet Backend)
+        proceedToVote(name);
     } else {
         showPinError("❌ Mã PIN ngày sinh chưa đúng! Vui lòng kiểm tra lại ngày & tháng sinh (DDMM).");
         elements.pinInput.select();

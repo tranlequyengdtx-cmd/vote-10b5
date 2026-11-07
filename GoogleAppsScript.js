@@ -306,6 +306,13 @@ function khoiTaoDashboard() {
   sheetDash.getRange("A2:G2").setBackground("#f1f5f9").setFontSize(11).setVerticalAlignment("middle");
   sheetDash.setRowHeight(2, 28);
 
+  // HÀNG 3: CẤU HÌNH NHANH TIÊU ĐỀ & MÃ ĐỢT BÌNH CHỌN (GVCN SỬA TẠI ĐÂY LÀ WEB ĐỔI NGAY TỨC THÌ)
+  sheetDash.getRange("A3").setValue("🏷️ Chủ Đề Đợt:").setFontWeight("bold").setBackground("#fef9c3").setVerticalAlignment("middle");
+  sheetDash.getRange("B3:D3").merge().setValue("Bình chọn những bạn làm ồn trong giờ học -- Tuần 10").setFontWeight("bold").setFontColor("#b45309").setVerticalAlignment("middle");
+  sheetDash.getRange("E3").setValue("Mã Đợt (Round):").setFontWeight("bold").setBackground("#fef9c3").setVerticalAlignment("middle");
+  sheetDash.getRange("F3:G3").merge().setValue("Tuan_10_2026").setFontWeight("bold").setFontColor("#0369a1").setHorizontalAlignment("center").setVerticalAlignment("middle");
+  sheetDash.setRowHeight(3, 30);
+
   // C. BẢNG CẢNH BÁO TOP 3 HỌC SINH LÀM ỒN NHIỀU NHẤT
   sheetDash.getRange("A4:G4").merge().setValue("⚠️ TOP 3 HỌC SINH BỊ PHẢN ÁNH LÀM ỒN / MẤT TRẬT TỰ NHIỀU NHẤT")
     .setFontWeight("bold").setFontColor("#ffffff").setBackground("#dc2626").setHorizontalAlignment("center");
@@ -424,9 +431,14 @@ function taoDotBinhChonMoi() {
   sheetDash.getRange(12, 4, numRows, 1).setValues(pointsValues);
   sheetDash.getRange(12, 5, numRows, 1).setValues(timeValues);
 
+  // Cập nhật mã đợt mới tự động ở F3 và Script Properties
+  const newRound = "Dot_" + Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "ddMMyyyy_HHmmss");
+  sheetDash.getRange("F3").setValue(newRound);
+  PropertiesService.getScriptProperties().setProperty("CURRENT_ROUND_ID", newRound);
+
   SpreadsheetApp.flush();
 
-  ui.alert("ĐÃ HOÀN TẤT!", `Đã sao lưu kết quả sang sheet: "LuuTru_DASHBOARD_${timeStr}" và reset bảng thành công! Học sinh có thể bắt đầu bình chọn đợt mới.`, ui.ButtonSet.OK);
+  ui.alert("ĐÃ HOÀN TẤT!", `Đã sao lưu kết quả sang sheet: "LuuTru_DASHBOARD_${timeStr}", cập nhật mã đợt mới: "${newRound}" và reset bảng thành công! Học sinh có thể bắt đầu bình chọn đợt mới.`, ui.ButtonSet.OK);
 }
 
 /**
@@ -465,13 +477,21 @@ function doPost(e) {
     const dataRange = sheetDash.getRange(12, 1, 46, 7);
     const values = dataRange.getValues();
 
-    // TỰ ĐỘNG NHẬN DIỆN ĐỢT BÌNH CHỌN MỚI TỪ CLI/WEB APP
+    // TỰ ĐỘNG NHẬN DIỆN ĐỢT BÌNH CHỌN MỚI TỪ CLI/WEB APP HOẶC TỪ Ô F3 TRÊN SHEET
     const scriptProps = PropertiesService.getScriptProperties();
     const currentRound = scriptProps.getProperty("CURRENT_ROUND_ID") || "";
     const incomingRound = (data.roundId || "").trim();
 
-    if (incomingRound && incomingRound !== currentRound) {
-      // Nếu phát hiện mã đợt mới từ Web/CLI, tự động sao lưu bảng cũ và reset điểm cho đợt mới
+    // Kiểm tra cấu hình Round ID trên ô F3 của sheetDash
+    let sheetRound = "";
+    try {
+      sheetRound = String(sheetDash.getRange("F3").getValue() || "").trim();
+    } catch(e) {}
+
+    const activeRound = sheetRound || incomingRound;
+
+    if (activeRound && activeRound !== currentRound) {
+      // Nếu phát hiện mã đợt mới từ Web/CLI hoặc đổi trên Sheet, tự động sao lưu bảng cũ và reset điểm cho đợt mới
       const timeStr = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "dd-MM_HHhmm");
       try {
         const backupDash = sheetDash.copyTo(ss);
@@ -486,7 +506,10 @@ function doPost(e) {
         values[i][3] = 0;
         values[i][4] = "";
       }
-      scriptProps.setProperty("CURRENT_ROUND_ID", incomingRound);
+      scriptProps.setProperty("CURRENT_ROUND_ID", activeRound);
+      if (!sheetRound && incomingRound) {
+        sheetDash.getRange("F3").setValue(incomingRound);
+      }
     }
 
     // 1. Tìm voter, kiểm tra xem đã nộp chưa, lấy trọng số (Cột F - index 5)
@@ -560,6 +583,23 @@ function doGet(e) {
     const action = e && e.parameter ? e.parameter.action : "";
     const voter = e && e.parameter ? (e.parameter.voter || "").trim() : "";
     const reqRound = e && e.parameter ? (e.parameter.round || "").trim() : "";
+
+    // LẤY CẤU HÌNH ĐỘNG TỪ GOOGLE SHEET (Tiêu đề, Đợt bình chọn)
+    if (action === "getConfig") {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const sheetDash = ss.getSheetByName(SHEET_DASHBOARD);
+      let appTitle = "";
+      let roundId = "";
+      if (sheetDash) {
+        appTitle = String(sheetDash.getRange("B3").getValue() || "").trim();
+        roundId = String(sheetDash.getRange("F3").getValue() || "").trim();
+      }
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        appTitle: appTitle,
+        roundId: roundId
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
 
     // Kiểm tra trạng thái nộp phiếu của 1 học sinh cụ thể
     if (action === "check" && voter) {

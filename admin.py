@@ -24,6 +24,7 @@ IS_TTY = sys.stdout.isatty()
 def c_bold(s): return f"\033[1m{s}\033[0m" if IS_TTY else str(s)
 def c_green(s): return f"\033[1;32m{s}\033[0m" if IS_TTY else str(s)
 def c_cyan(s): return f"\033[1;36m{s}\033[0m" if IS_TTY else str(s)
+def c_blue(s): return f"\033[1;34m{s}\033[0m" if IS_TTY else str(s)
 def c_yellow(s): return f"\033[1;33m{s}\033[0m" if IS_TTY else str(s)
 def c_red(s): return f"\033[1;31m{s}\033[0m" if IS_TTY else str(s)
 def c_magenta(s): return f"\033[1;35m{s}\033[0m" if IS_TTY else str(s)
@@ -186,7 +187,7 @@ def print_status(config=None):
     print(c_cyan("═" * 68) + "\n")
 
 
-def git_push_auto():
+def git_push_auto(force_yes=False):
     """Hỏi và tự động commit/push lên GitHub Pages"""
     try:
         res = subprocess.run(["git", "status", "-s"], cwd=SCRIPT_DIR, capture_output=True, text=True)
@@ -198,7 +199,15 @@ def git_push_auto():
         for line in res.stdout.strip().split("\n"):
             print(f"   {line}")
 
-        ans = input(c_bold("\nThầy có muốn commit và push ngay lên GitHub Pages không? [Y/n]: ")).strip().lower()
+        if force_yes:
+            ans = "y"
+        else:
+            try:
+                ans = input(c_bold("\nThầy có muốn commit và push ngay lên GitHub Pages không? [Y/n]: ")).strip().lower()
+            except (EOFError, KeyboardInterrupt):
+                ans = "n"
+                print()
+
         if ans in ["", "y", "yes"]:
             print("🚀 Đang đẩy dữ liệu lên GitHub...")
             subprocess.run(["git", "add", "."], cwd=SCRIPT_DIR, check=True)
@@ -308,6 +317,7 @@ def main():
     parser.add_argument("--title", "-t", type=str, help="Cập nhật tiêu đề App")
     parser.add_argument("--prompt", "-p", type=str, help="Cập nhật câu hỏi / lời nhắc bình chọn")
     parser.add_argument("--push", action="store_true", help="Đẩy cấu hình mới lên GitHub Pages ngay")
+    parser.add_argument("--yes", "-y", action="store_true", help="Tự động đồng ý commit & push không cần hỏi lại")
     parser.add_argument("--interactive", "-i", action="store_true", help="Mở menu tương tác đầy đủ")
 
     args = parser.parse_args()
@@ -350,7 +360,7 @@ def main():
         print_status(config)
 
     if args.push or changed:
-        git_push_auto()
+        git_push_auto(force_yes=args.yes)
 
 
 if __name__ == "__main__":
